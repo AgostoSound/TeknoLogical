@@ -1,7 +1,7 @@
 {
   "slug": "TeknoLogical",
   "name": "TeknoLogical",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "license": "GPL-3.0-or-later",
   "brand": "TeknoLogical",
   "author": "AgostoSound",
@@ -12,5 +12,12 @@
   "sourceUrl": "https://github.com/AgostoSound/TeknoLogical",
   "donateUrl": "",
   "changelogUrl": "",
-  "modules": []
+  "modules": [
+    {
+      "slug": "TL-tester",
+      "name": "TL-tester",
+      "description": "tester - knobs and components",
+      "tags": ["Blank"]
+    }
+  ]
 }
