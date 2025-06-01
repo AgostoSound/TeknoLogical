@@ -18,6 +18,15 @@
       "name": "TL-tester",
       "description": "tester - knobs and components",
       "tags": ["Blank"]
+    },
+    {
+      "slug": "TL-Drum5",
+      "name": "TL-Drum5",
+      "description": "Compact 5-voice rhythm engine.",
+      "tags": [
+        "Drum"
+      ]
     }
+
   ]
 }

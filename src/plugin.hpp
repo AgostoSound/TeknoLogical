@@ -9,4 +9,5 @@ extern Plugin* pluginInstance;
 
 // Declare each Model, defined in each module source file
 extern Model* modelTL_tester;
+extern Model* modelTL_Drum5;
 

@@ -138,8 +138,8 @@ struct TL_testerWidget : ModuleWidget {
 
 		addParam(createParamCentered<BefacoTinyKnob>(mm2px(Vec(8.5, 85.0)), module, TL_tester::KNOB17_PARAM));
 		addParam(createParamCentered<Rogan5PSGray>(mm2px(Vec(22.5, 85.0)), module, TL_tester::KNOB18_PARAM));
-		addParam(createParamCentered<Rogan1PBlue>(mm2px(Vec(36.5, 85.0)), module, TL_tester::KNOB19_PARAM));
-		addParam(createParamCentered<BefacoBigKnob>(mm2px(Vec(50.5, 85.0)), module, TL_tester::KNOB20_PARAM));
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(36.5, 85.0)), module, TL_tester::KNOB19_PARAM));
+		addParam(createParamCentered<Rogan1PWhite>(mm2px(Vec(50.5, 85.0)), module, TL_tester::KNOB20_PARAM));
 
 
 
