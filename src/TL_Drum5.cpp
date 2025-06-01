@@ -1,4 +1,9 @@
 #include "plugin.hpp"
+#include "../res/samples/kick.h"
+#include "../res/samples/snare.h"
+#include "../res/samples/clap.h"
+#include "../res/samples/openhat.h"
+#include "../res/samples/closedhat.h"
 
 
 struct TL_Drum5 : Module {
@@ -62,53 +67,123 @@ struct TL_Drum5 : Module {
 		LIGHTS_LEN
 	};
 
+    dsp::SchmittTrigger trigKick, trigClap, trigSnare, trigClosedHat, trigOpenHat;
+
+	struct Voice {
+        const int16_t* sample = nullptr;
+        int length = 0;
+        int pos = 0;
+        bool playing = false;
+
+        float step() {
+            if (!playing || pos >= length)
+                return 0.f;
+
+            float out = (float)sample[pos++] / 32768.f;
+            if (pos >= length)
+                playing = false;
+            return out;
+        }
+
+        void trigger(const int16_t* s, int len) {
+            sample = s;
+            length = len;
+            pos = 0;
+            playing = true;
+        }
+    };
+
+    Voice kick, clap, snare, closedHat, openHat;
+
+	
 	TL_Drum5() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(PUSH_KK_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(LINK_KK_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(LINK_OH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PUSH_CH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PUSH_OH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(LINK_CH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(LINK_SN_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PUSH_CL_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PUSH_SN_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(LINK_CL_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_KK_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_KK_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_OH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_CH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_OH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_CH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_SN_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_CL_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_SN_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_CL_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(DECAY_KK_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(DECAY_OH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(DECAY_CH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(DECAY_SN_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(DECAY_CL_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(FILTER_KK_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(FILTER_OH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(FILTER_CH_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(FILTER_SN_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(FILTER_CL_PARAM, 0.f, 1.f, 0.f, "");
-		configInput(IN_KK_INPUT, "");
-		configInput(IN_CH_INPUT, "");
-		configInput(IN_OH_INPUT, "");
-		configInput(IN_CL_INPUT, "");
-		configInput(IN_SN_INPUT, "");
-		configOutput(OUT_KK_OUTPUT, "");
-		configOutput(OUT_OH_OUTPUT, "");
-		configOutput(OUT_CH_OUTPUT, "");
-		configOutput(OUT_SN_OUTPUT, "");
-		configOutput(OUT_CL_OUTPUT, "");
-		configOutput(OUT_L_OUTPUT, "");
-		configOutput(OUT_R_OUTPUT, "");
+		
+		// PUSH.
+		configParam(PUSH_CL_PARAM, 0.f, 1.f, 0.f, "Push");
+		configParam(PUSH_CH_PARAM, 0.f, 1.f, 0.f, "Push");
+		configParam(PUSH_KK_PARAM, 0.f, 1.f, 0.f, "Push");
+		configParam(PUSH_OH_PARAM, 0.f, 1.f, 0.f, "Push");
+		configParam(PUSH_SN_PARAM, 0.f, 1.f, 0.f, "Push");
+
+		// LINK.
+		configParam(LINK_CL_PARAM, 0.f, 1.f, 0.f, "Link");
+		configParam(LINK_CH_PARAM, 0.f, 1.f, 0.f, "Link");
+		configParam(LINK_KK_PARAM, 0.f, 1.f, 0.f, "Link");
+		configParam(LINK_OH_PARAM, 0.f, 1.f, 0.f, "Link");
+		configParam(LINK_SN_PARAM, 0.f, 1.f, 0.f, "Link");
+
+		// PAN.
+		configParam(PAN_CL_PARAM, -100.f, 100.f, 0.f, "Pan");
+		configParam(PAN_CH_PARAM, -100.f, 100.f, 0.f, "Pan");
+		configParam(PAN_KK_PARAM, -100.f, 100.f, 0.f, "Pan");
+		configParam(PAN_OH_PARAM, -100.f, 100.f, 0.f, "Pan");
+		configParam(PAN_SN_PARAM, -100.f, 100.f, 0.f, "Pan");
+
+		// VOL.
+		configParam(VOL_CL_PARAM, 0.f, 10.f, 5.f, "Vol");
+		configParam(VOL_CH_PARAM, 0.f, 10.f, 5.f, "Vol");
+		configParam(VOL_KK_PARAM, 0.f, 10.f, 5.f, "Vol");
+		configParam(VOL_OH_PARAM, 0.f, 10.f, 5.f, "Vol");
+		configParam(VOL_SN_PARAM, 0.f, 10.f, 5.f, "Vol");
+
+		// DECAY.
+		configParam(DECAY_CL_PARAM, -10.f, 10.f, 0.f, "Decay");
+		configParam(DECAY_CH_PARAM, -10.f, 10.f, 0.f, "Decay");
+		configParam(DECAY_KK_PARAM, -10.f, 10.f, 0.f, "Decay");
+		configParam(DECAY_OH_PARAM, -10.f, 10.f, 0.f, "Decay");
+		configParam(DECAY_SN_PARAM, -10.f, 10.f, 0.f, "Decay");
+
+		// FILTER.
+		configParam(FILTER_CL_PARAM, -10.f, 10.f, 0.f, "Filter");
+		configParam(FILTER_CH_PARAM, -10.f, 10.f, 0.f, "Filter");
+		configParam(FILTER_KK_PARAM, -10.f, 10.f, 0.f, "Filter");
+		configParam(FILTER_OH_PARAM, -10.f, 10.f, 0.f, "Filter");
+		configParam(FILTER_SN_PARAM, -10.f, 10.f, 0.f, "Filter");
+		
+		// TRIGGER INPUTS.
+		configInput(IN_CL_INPUT, "Trigger clap");
+		configInput(IN_CH_INPUT, "Trigger closed hat");
+		configInput(IN_KK_INPUT, "Trigger kick");
+		configInput(IN_OH_INPUT, "Trigger open hat");
+		configInput(IN_SN_INPUT, "Trigger snare");
+		
+		// INDIVIDUAL OUTPUTS.
+		configOutput(OUT_CL_OUTPUT, "Clap");
+		configOutput(OUT_CH_OUTPUT, "Closed hat");
+		configOutput(OUT_KK_OUTPUT, "Kick");
+		configOutput(OUT_OH_OUTPUT, "Open hat");
+		configOutput(OUT_SN_OUTPUT, "Snare");
+		
+		// STEREO OUTPUTS.
+		configOutput(OUT_L_OUTPUT, "L");
+		configOutput(OUT_R_OUTPUT, "R");
 	}
 
 	void process(const ProcessArgs& args) override {
+        if (trigKick.process(inputs[IN_KK_INPUT].getVoltage())) {kick.trigger(kick_sample, kick_sample_len);
+        }
+        if (trigClap.process(inputs[IN_CL_INPUT].getVoltage())) {clap.trigger(clap_sample, clap_sample_len);
+        }
+        if (trigSnare.process(inputs[IN_SN_INPUT].getVoltage())) {snare.trigger(snare_sample, snare_sample_len);
+        }
+        if (trigClosedHat.process(inputs[IN_CH_INPUT].getVoltage())) {closedHat.trigger(closedhat_sample, closedhat_sample_len);
+        }
+        if (trigOpenHat.process(inputs[IN_OH_INPUT].getVoltage())) {openHat.trigger(openhat_sample, openhat_sample_len);
+        }
+
+        // Mezcla de todas las voces activas
+        float mix = 0.f;
+        mix += kick.step();
+        mix += clap.step();
+        mix += snare.step();
+        mix += closedHat.step();
+        mix += openHat.step();
+
+        // Salida final
+        outputs[OUT_L_OUTPUT].setVoltage(mix * 5.f); // Escalado para ±5V
+        outputs[OUT_R_OUTPUT].setVoltage(mix * 5.f); // Escalado para ±5V
+
 	}
 };
 
@@ -123,59 +198,72 @@ struct TL_Drum5Widget : ModuleWidget {
 		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
+		// PUSH.
+		addParam(createParamCentered<NKK>(mm2px(Vec(105.35, 34.874)), module, TL_Drum5::PUSH_CL_PARAM));
+		addParam(createParamCentered<NKK>(mm2px(Vec(81.367, 30.61)), module, TL_Drum5::PUSH_CH_PARAM));
 		addParam(createParamCentered<NKK>(mm2px(Vec(56.698, 28.593)), module, TL_Drum5::PUSH_KK_PARAM));
+		addParam(createParamCentered<NKK>(mm2px(Vec(31.734, 32.633)), module, TL_Drum5::PUSH_OH_PARAM));
+		addParam(createParamCentered<NKK>(mm2px(Vec(6.964, 37.015)), module, TL_Drum5::PUSH_SN_PARAM));
+
+		// LINK.
+		addParam(createParamCentered<NKK>(mm2px(Vec(116.463, 36.96)), module, TL_Drum5::LINK_CL_PARAM));
+		addParam(createParamCentered<NKK>(mm2px(Vec(92.502, 32.702)), module, TL_Drum5::LINK_CH_PARAM));
 		addParam(createParamCentered<NKK>(mm2px(Vec(67.794, 28.5)), module, TL_Drum5::LINK_KK_PARAM));
 		addParam(createParamCentered<NKK>(mm2px(Vec(42.932, 30.532)), module, TL_Drum5::LINK_OH_PARAM));
-		addParam(createParamCentered<NKK>(mm2px(Vec(81.367, 30.61)), module, TL_Drum5::PUSH_CH_PARAM));
-		addParam(createParamCentered<NKK>(mm2px(Vec(31.734, 32.633)), module, TL_Drum5::PUSH_OH_PARAM));
-		addParam(createParamCentered<NKK>(mm2px(Vec(92.502, 32.702)), module, TL_Drum5::LINK_CH_PARAM));
 		addParam(createParamCentered<NKK>(mm2px(Vec(18.069, 34.85)), module, TL_Drum5::LINK_SN_PARAM));
-		addParam(createParamCentered<NKK>(mm2px(Vec(105.35, 34.874)), module, TL_Drum5::PUSH_CL_PARAM));
-		addParam(createParamCentered<NKK>(mm2px(Vec(6.964, 37.015)), module, TL_Drum5::PUSH_SN_PARAM));
-		addParam(createParamCentered<NKK>(mm2px(Vec(116.463, 36.96)), module, TL_Drum5::LINK_CL_PARAM));
 
+		// PAN.
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(105.467, 52.009)), module, TL_Drum5::PAN_CL_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(81.484, 47.815)), module, TL_Drum5::PAN_CH_PARAM));
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(56.698, 45.752)), module, TL_Drum5::PAN_KK_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(31.734, 49.838)), module, TL_Drum5::PAN_OH_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(6.52, 53.963)), module, TL_Drum5::PAN_SN_PARAM));
+
+		// VOL.
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(116.089, 54.165)), module, TL_Drum5::VOL_CL_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(92.292, 49.744)), module, TL_Drum5::VOL_CH_PARAM));
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(67.794, 45.658)), module, TL_Drum5::VOL_KK_PARAM));
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(42.511, 47.713)), module, TL_Drum5::VOL_OH_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(81.484, 47.815)), module, TL_Drum5::PAN_CH_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(31.734, 49.838)), module, TL_Drum5::PAN_OH_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(92.292, 49.744)), module, TL_Drum5::VOL_CH_PARAM));
 		addParam(createParamCentered<Trimpot>(mm2px(Vec(17.648, 51.775)), module, TL_Drum5::VOL_SN_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(105.467, 52.009)), module, TL_Drum5::PAN_CL_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(6.52, 53.963)), module, TL_Drum5::PAN_SN_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(116.089, 54.165)), module, TL_Drum5::VOL_CL_PARAM));
 
+		// DECAY.
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(110.584, 72.303)), module, TL_Drum5::DECAY_CL_PARAM));
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(86.766, 67.481)), module, TL_Drum5::DECAY_CH_PARAM));
 		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(61.903, 63.757)), module, TL_Drum5::DECAY_KK_PARAM));
 		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(36.906, 67.403)), module, TL_Drum5::DECAY_OH_PARAM));
-		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(86.766, 67.481)), module, TL_Drum5::DECAY_CH_PARAM));
 		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(12.078, 72.177)), module, TL_Drum5::DECAY_SN_PARAM));
-		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(110.584, 72.303)), module, TL_Drum5::DECAY_CL_PARAM));
+
+		// FILTER.
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(110.531, 92.882)), module, TL_Drum5::FILTER_CL_PARAM));
+		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(86.766, 88.198)), module, TL_Drum5::FILTER_CH_PARAM));
 		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(61.874, 84.442)), module, TL_Drum5::FILTER_KK_PARAM));
 		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(36.965, 88.202)), module, TL_Drum5::FILTER_OH_PARAM));
-		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(86.766, 88.198)), module, TL_Drum5::FILTER_CH_PARAM));
 		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(12.189, 92.903)), module, TL_Drum5::FILTER_SN_PARAM));
-		addParam(createParamCentered<Rogan1PSWhite>(mm2px(Vec(110.531, 92.882)), module, TL_Drum5::FILTER_CL_PARAM));
-
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(56.699, 14.414)), module, TL_Drum5::IN_KK_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(81.555, 16.503)), module, TL_Drum5::IN_CH_INPUT));
-		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(31.768, 18.678)), module, TL_Drum5::IN_OH_INPUT));
+		
+		// TRIGGER INPUTS.
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(105.58, 20.703)), module, TL_Drum5::IN_CL_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(81.555, 16.503)), module, TL_Drum5::IN_CH_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(56.699, 14.414)), module, TL_Drum5::IN_KK_INPUT));
+		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(31.768, 18.678)), module, TL_Drum5::IN_OH_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(6.62, 22.822)), module, TL_Drum5::IN_SN_INPUT));
-
+		
+		// INDIVIDUAL OUTPUTS.
+		addOutput(createOutputCentered<DarkPJ301MPort>(mm2px(Vec(115.608, 22.808)), module, TL_Drum5::OUT_CL_OUTPUT));
+		addOutput(createOutputCentered<DarkPJ301MPort>(mm2px(Vec(92.302, 18.603)), module, TL_Drum5::OUT_CH_OUTPUT));
 		addOutput(createOutputCentered<DarkPJ301MPort>(mm2px(Vec(67.618, 14.357)), module, TL_Drum5::OUT_KK_OUTPUT));
 		addOutput(createOutputCentered<DarkPJ301MPort>(mm2px(Vec(42.523, 16.495)), module, TL_Drum5::OUT_OH_OUTPUT));
-		addOutput(createOutputCentered<DarkPJ301MPort>(mm2px(Vec(92.302, 18.603)), module, TL_Drum5::OUT_CH_OUTPUT));
 		addOutput(createOutputCentered<DarkPJ301MPort>(mm2px(Vec(17.66, 20.723)), module, TL_Drum5::OUT_SN_OUTPUT));
-		addOutput(createOutputCentered<DarkPJ301MPort>(mm2px(Vec(115.608, 22.808)), module, TL_Drum5::OUT_CL_OUTPUT));
 		
+		// STEREO OUTPUTS.
 		addOutput(createOutputCentered<PJ3410Port>(mm2px(Vec(56.615, 113.84)), module, TL_Drum5::OUT_L_OUTPUT));
 		addOutput(createOutputCentered<PJ3410Port>(mm2px(Vec(67.63, 113.91)), module, TL_Drum5::OUT_R_OUTPUT));
-
+		
+		// LEDS.
+		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(73.667, 104.788)), module, TL_Drum5::LED_CL_LIGHT));
+		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(67.832, 103.221)), module, TL_Drum5::LED_CH_LIGHT));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(62.032, 102.168)), module, TL_Drum5::LED_KK_LIGHT));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(56.209, 103.174)), module, TL_Drum5::LED_OH_LIGHT));
-		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(67.832, 103.221)), module, TL_Drum5::LED_CH_LIGHT));
 		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(50.377, 104.787)), module, TL_Drum5::LED_SN_LIGHT));
-		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(73.667, 104.788)), module, TL_Drum5::LED_CL_LIGHT));
 
 	}
 };
