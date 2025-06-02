@@ -177,6 +177,16 @@ struct TL_Drum5 : Module {
 		right = input * (pan >= 0 ? 1.0f : 1.0f + pan);
 	}
 
+	float applyBoost(float signal, float push) {
+		if (push == 1.0f) {
+			float boosted = signal * 1.5f;
+			return clamp(boosted, -1.f, 1.f);
+		}
+		else {
+			return signal;
+		}
+	}
+
 
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
@@ -195,6 +205,13 @@ struct TL_Drum5 : Module {
 		snVol = params[VOL_SN_PARAM].getValue();
 		chVol = params[VOL_CH_PARAM].getValue();
 		ohVol = params[VOL_OH_PARAM].getValue();
+		// Get pushes.
+		float kkPush, clPush, snPush, chPush, ohPush;
+		kkPush = params[PUSH_KK_PARAM].getValue();
+		clPush = params[PUSH_CL_PARAM].getValue();
+		snPush = params[PUSH_SN_PARAM].getValue();
+		chPush = params[PUSH_CH_PARAM].getValue();
+		ohPush = params[PUSH_OH_PARAM].getValue();
 
 		// Triggers play samples.
         if (trigKick.process(kkTrig)) {kick.trigger(kick_sample, kick_sample_len);}
@@ -210,6 +227,7 @@ struct TL_Drum5 : Module {
 		// Kick
 		float kickSample = kick.step();
 		float kickVol = applyVolume(kickSample, kkVol);
+		kickVol = applyBoost(kickVol, kkPush);
 		outputs[OUT_KK_OUTPUT].setVoltage(kickVol * 5.f);
 		lights[LED_KK_LIGHT].setBrightness(std::fabs(kickVol));
 		
@@ -222,6 +240,7 @@ struct TL_Drum5 : Module {
 		// Clap
 		float clapSample = clap.step();
 		float clapVol = applyVolume(clapSample, clVol);
+		clapVol = applyBoost(clapVol, clPush);
 		outputs[OUT_CL_OUTPUT].setVoltage(clapVol * 5.f);
 		lights[LED_CL_LIGHT].setBrightness(std::fabs(clapVol));
 		
@@ -234,6 +253,7 @@ struct TL_Drum5 : Module {
 		// Snare
 		float snareSample = snare.step();
 		float snareVol = applyVolume(snareSample, snVol);
+		snareVol = applyBoost(snareVol, snPush);
 		outputs[OUT_SN_OUTPUT].setVoltage(snareVol * 5.f);
 		lights[LED_SN_LIGHT].setBrightness(std::fabs(snareVol));
 
@@ -246,6 +266,7 @@ struct TL_Drum5 : Module {
 		// Closed Hat
 		float closedHatSample = closedHat.step();
 		float closedHatVol = applyVolume(closedHatSample, chVol);
+		closedHatVol = applyBoost(closedHatVol, chPush);
 		outputs[OUT_CH_OUTPUT].setVoltage(closedHatVol * 5.f);
 		lights[LED_CH_LIGHT].setBrightness(std::fabs(closedHatVol));
 
@@ -258,6 +279,7 @@ struct TL_Drum5 : Module {
 		// Open Hat
 		float openHatSample = openHat.step();
 		float openHatVol = applyVolume(openHatSample, ohVol);
+		openHatVol = applyBoost(openHatVol, ohPush);
 		outputs[OUT_OH_OUTPUT].setVoltage(openHatVol * 5.f);
 		lights[LED_OH_LIGHT].setBrightness(std::fabs(openHatVol));
 
