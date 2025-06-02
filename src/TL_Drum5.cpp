@@ -6,7 +6,9 @@
 #include "../res/samples/closedhat.h"
 
 
+// General structure.
 struct TL_Drum5 : Module {
+// --------------------   Visual components namespace  ---------------------------
 	enum ParamId {
 		PUSH_KK_PARAM,
 		LINK_KK_PARAM,
@@ -67,6 +69,7 @@ struct TL_Drum5 : Module {
 		LIGHTS_LEN
 	};
 
+// --------------------   Set initial values  ------------------------------------
     dsp::SchmittTrigger trigKick, trigClap, trigSnare, trigClosedHat, trigOpenHat;
 
 	struct Voice {
@@ -95,7 +98,7 @@ struct TL_Drum5 : Module {
 
     Voice kick, clap, snare, closedHat, openHat;
 
-	
+// --------------------   Config module  -----------------------------------------
 	TL_Drum5() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		
@@ -114,11 +117,11 @@ struct TL_Drum5 : Module {
 		configParam(LINK_SN_PARAM, 0.f, 1.f, 0.f, "Link");
 
 		// PAN.
-		configParam(PAN_CL_PARAM, -100.f, 100.f, 0.f, "Pan");
-		configParam(PAN_CH_PARAM, -100.f, 100.f, 0.f, "Pan");
-		configParam(PAN_KK_PARAM, -100.f, 100.f, 0.f, "Pan");
-		configParam(PAN_OH_PARAM, -100.f, 100.f, 0.f, "Pan");
-		configParam(PAN_SN_PARAM, -100.f, 100.f, 0.f, "Pan");
+		configParam(PAN_CL_PARAM, -1.f, 1.f, 0.f, "Pan");
+		configParam(PAN_CH_PARAM, -1.f, 1.f, 0.f, "Pan");
+		configParam(PAN_KK_PARAM, -1.f, 1.f, 0.f, "Pan");
+		configParam(PAN_OH_PARAM, -1.f, 1.f, 0.f, "Pan");
+		configParam(PAN_SN_PARAM, -1.f, 1.f, 0.f, "Pan");
 
 		// VOL.
 		configParam(VOL_CL_PARAM, 0.f, 10.f, 5.f, "Vol");
@@ -160,34 +163,118 @@ struct TL_Drum5 : Module {
 		configOutput(OUT_R_OUTPUT, "R");
 	}
 
+// --------------------   Functions  ---------------------------------------------
+	float applyVolume(float signal, float volumeParam) {
+		float gain = clamp(volumeParam / 10.f, 0.f, 1.f);  // volumen normalizado [0..1]
+		return signal * gain;
+	}
+
+	// Pan simple con pan en [-1, 1]
+	// -1 = todo a left, 1 = todo a right, 0 = centro
+	void applyPan(float input, float panParam, float& left, float& right) {
+		float pan = clamp(panParam, -1.f, 1.f);
+		left  = input * (pan <= 0 ? 1.0f : 1.0f - pan);
+		right = input * (pan >= 0 ? 1.0f : 1.0f + pan);
+	}
+
+
+// --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
-        if (trigKick.process(inputs[IN_KK_INPUT].getVoltage())) {kick.trigger(kick_sample, kick_sample_len);
-        }
-        if (trigClap.process(inputs[IN_CL_INPUT].getVoltage())) {clap.trigger(clap_sample, clap_sample_len);
-        }
-        if (trigSnare.process(inputs[IN_SN_INPUT].getVoltage())) {snare.trigger(snare_sample, snare_sample_len);
-        }
-        if (trigClosedHat.process(inputs[IN_CH_INPUT].getVoltage())) {closedHat.trigger(closedhat_sample, closedhat_sample_len);
-        }
-        if (trigOpenHat.process(inputs[IN_OH_INPUT].getVoltage())) {openHat.trigger(openhat_sample, openhat_sample_len);
-        }
 
-        // Mezcla de todas las voces activas
-        float mix = 0.f;
-        mix += kick.step();
-        mix += clap.step();
-        mix += snare.step();
-        mix += closedHat.step();
-        mix += openHat.step();
+		// Get triggers.
+		float kkTrig, clTrig, snTrig, chTrig, ohTrig;
+		kkTrig = inputs[IN_KK_INPUT].getVoltage();
+		clTrig = inputs[IN_CL_INPUT].getVoltage();
+		snTrig = inputs[IN_SN_INPUT].getVoltage();
+		chTrig = inputs[IN_CH_INPUT].getVoltage();
+		ohTrig = inputs[IN_OH_INPUT].getVoltage();
+		// Get vols.
+		float kkVol, clVol, snVol, chVol, ohVol;
+		kkVol = params[VOL_KK_PARAM].getValue();
+		clVol = params[VOL_CL_PARAM].getValue();
+		snVol = params[VOL_SN_PARAM].getValue();
+		chVol = params[VOL_CH_PARAM].getValue();
+		ohVol = params[VOL_OH_PARAM].getValue();
 
-        // Salida final
-        outputs[OUT_L_OUTPUT].setVoltage(mix * 5.f); // Escalado para ±5V
-        outputs[OUT_R_OUTPUT].setVoltage(mix * 5.f); // Escalado para ±5V
+		// Triggers play samples.
+        if (trigKick.process(kkTrig)) {kick.trigger(kick_sample, kick_sample_len);}
+        if (trigClap.process(clTrig)) {clap.trigger(clap_sample, clap_sample_len);}
+        if (trigSnare.process(snTrig)) {snare.trigger(snare_sample, snare_sample_len);}
+        if (trigClosedHat.process(chTrig)) {closedHat.trigger(closedhat_sample, closedhat_sample_len);}
+        if (trigOpenHat.process(ohTrig)) {openHat.trigger(openhat_sample, openhat_sample_len);}
+
+		// Variables para mezcla estéreo
+		float mixLeft = 0.f;
+		float mixRight = 0.f;
+
+		// Kick
+		float kickSample = kick.step();
+		float kickVol = applyVolume(kickSample, kkVol);
+		outputs[OUT_KK_OUTPUT].setVoltage(kickVol * 5.f);
+		lights[LED_KK_LIGHT].setBrightness(std::fabs(kickVol));
+		
+		float kickLeft, kickRight;
+		applyPan(kickVol, params[PAN_KK_PARAM].getValue(), kickLeft, kickRight);
+		mixLeft += kickLeft;
+		mixRight += kickRight;
+		
+		
+		// Clap
+		float clapSample = clap.step();
+		float clapVol = applyVolume(clapSample, clVol);
+		outputs[OUT_CL_OUTPUT].setVoltage(clapVol * 5.f);
+		lights[LED_CL_LIGHT].setBrightness(std::fabs(clapVol));
+		
+		float clapLeft, clapRight;
+		applyPan(clapVol, params[PAN_CL_PARAM].getValue(), clapLeft, clapRight);
+		mixLeft += clapLeft;
+		mixRight += clapRight;
+		
+		
+		// Snare
+		float snareSample = snare.step();
+		float snareVol = applyVolume(snareSample, snVol);
+		outputs[OUT_SN_OUTPUT].setVoltage(snareVol * 5.f);
+		lights[LED_SN_LIGHT].setBrightness(std::fabs(snareVol));
+
+		float snareLeft, snareRight;
+		applyPan(snareVol, params[PAN_SN_PARAM].getValue(), snareLeft, snareRight);
+		mixLeft += snareLeft;
+		mixRight += snareRight;
+		
+		
+		// Closed Hat
+		float closedHatSample = closedHat.step();
+		float closedHatVol = applyVolume(closedHatSample, chVol);
+		outputs[OUT_CH_OUTPUT].setVoltage(closedHatVol * 5.f);
+		lights[LED_CH_LIGHT].setBrightness(std::fabs(closedHatVol));
+
+		float closedHatLeft, closedHatRight;
+		applyPan(closedHatVol, params[PAN_CH_PARAM].getValue(), closedHatLeft, closedHatRight);
+		mixLeft += closedHatLeft;
+		mixRight += closedHatRight;
+		
+
+		// Open Hat
+		float openHatSample = openHat.step();
+		float openHatVol = applyVolume(openHatSample, ohVol);
+		outputs[OUT_OH_OUTPUT].setVoltage(openHatVol * 5.f);
+		lights[LED_OH_LIGHT].setBrightness(std::fabs(openHatVol));
+
+		float openHatLeft, openHatRight;
+		applyPan(openHatVol, params[PAN_OH_PARAM].getValue(), openHatLeft, openHatRight);
+		mixLeft += openHatLeft;
+		mixRight += openHatRight;
+
+        // Salidas estéreo, escalado a ±5V
+		outputs[OUT_L_OUTPUT].setVoltage(mixLeft * 5.f);
+		outputs[OUT_R_OUTPUT].setVoltage(mixRight * 5.f);
 
 	}
 };
 
 
+// --------------------   Visual components  -------------------------------------
 struct TL_Drum5Widget : ModuleWidget {
 	TL_Drum5Widget(TL_Drum5* module) {
 		setModule(module);
