@@ -4,6 +4,7 @@
 #include "../res/samples/clap.h"
 #include "../res/samples/openhat.h"
 #include "../res/samples/closedhat.h"
+#include "dsp_utils.hpp"
 
 
 // General structure.
@@ -164,28 +165,7 @@ struct TL_Drum5 : Module {
 	}
 
 // --------------------   Functions  ---------------------------------------------
-	float applyVolume(float signal, float volumeParam) {
-		float gain = clamp(volumeParam / 10.f, 0.f, 1.f);  // volumen normalizado [0..1]
-		return signal * gain;
-	}
 
-	// Pan simple con pan en [-1, 1]
-	// -1 = todo a left, 1 = todo a right, 0 = centro
-	void applyPan(float input, float panParam, float& left, float& right) {
-		float pan = clamp(panParam, -1.f, 1.f);
-		left  = input * (pan <= 0 ? 1.0f : 1.0f - pan);
-		right = input * (pan >= 0 ? 1.0f : 1.0f + pan);
-	}
-
-	float applyBoost(float signal, float push) {
-		if (push == 1.0f) {
-			float boosted = signal * 1.5f;
-			return clamp(boosted, -1.f, 1.f);
-		}
-		else {
-			return signal;
-		}
-	}
 
 
 // --------------------   Main cycle logic  --------------------------------------
@@ -226,67 +206,63 @@ struct TL_Drum5 : Module {
 
 		// Kick
 		float kickSample = kick.step();
-		float kickVol = applyVolume(kickSample, kkVol);
-		kickVol = applyBoost(kickVol, kkPush);
-		outputs[OUT_KK_OUTPUT].setVoltage(kickVol * 5.f);
-		lights[LED_KK_LIGHT].setBrightness(std::fabs(kickVol));
-		
+		kickSample = DSPUtils::applyBoost(kickSample, kkPush);		
+		kickSample = DSPUtils::applyVolume(kickSample, kkVol);		
+		outputs[OUT_KK_OUTPUT].setVoltage(kickSample * 5.f);
+		lights[LED_KK_LIGHT].setBrightness(std::fabs(kickSample));
 		float kickLeft, kickRight;
-		applyPan(kickVol, params[PAN_KK_PARAM].getValue(), kickLeft, kickRight);
+		DSPUtils::applyPan(kickSample, params[PAN_KK_PARAM].getValue(), kickLeft, kickRight);
 		mixLeft += kickLeft;
 		mixRight += kickRight;
 		
 		
 		// Clap
 		float clapSample = clap.step();
-		float clapVol = applyVolume(clapSample, clVol);
-		clapVol = applyBoost(clapVol, clPush);
-		outputs[OUT_CL_OUTPUT].setVoltage(clapVol * 5.f);
-		lights[LED_CL_LIGHT].setBrightness(std::fabs(clapVol));
-		
+		clapSample = DSPUtils::applyBoost(clapSample, clPush);
+		clapSample = DSPUtils::applyVolume(clapSample, clVol);
+		outputs[OUT_CL_OUTPUT].setVoltage(clapSample * 5.f);
+		lights[LED_CL_LIGHT].setBrightness(std::fabs(clapSample));
 		float clapLeft, clapRight;
-		applyPan(clapVol, params[PAN_CL_PARAM].getValue(), clapLeft, clapRight);
+		DSPUtils::applyPan(clapSample, params[PAN_CL_PARAM].getValue(), clapLeft, clapRight);
 		mixLeft += clapLeft;
 		mixRight += clapRight;
 		
 		
 		// Snare
 		float snareSample = snare.step();
-		float snareVol = applyVolume(snareSample, snVol);
-		snareVol = applyBoost(snareVol, snPush);
-		outputs[OUT_SN_OUTPUT].setVoltage(snareVol * 5.f);
-		lights[LED_SN_LIGHT].setBrightness(std::fabs(snareVol));
-
+		snareSample = DSPUtils::applyBoost(snareSample, snPush);
+		snareSample = DSPUtils::applyVolume(snareSample, snVol);
+		outputs[OUT_SN_OUTPUT].setVoltage(snareSample * 5.f);
+		lights[LED_SN_LIGHT].setBrightness(std::fabs(snareSample));
 		float snareLeft, snareRight;
-		applyPan(snareVol, params[PAN_SN_PARAM].getValue(), snareLeft, snareRight);
+		DSPUtils::applyPan(snareSample, params[PAN_SN_PARAM].getValue(), snareLeft, snareRight);
 		mixLeft += snareLeft;
 		mixRight += snareRight;
 		
 		
 		// Closed Hat
 		float closedHatSample = closedHat.step();
-		float closedHatVol = applyVolume(closedHatSample, chVol);
-		closedHatVol = applyBoost(closedHatVol, chPush);
-		outputs[OUT_CH_OUTPUT].setVoltage(closedHatVol * 5.f);
-		lights[LED_CH_LIGHT].setBrightness(std::fabs(closedHatVol));
-
+		closedHatSample = DSPUtils::applyBoost(closedHatSample, chPush);
+		closedHatSample = DSPUtils::applyVolume(closedHatSample, chVol);
+		outputs[OUT_CH_OUTPUT].setVoltage(closedHatSample * 5.f);
+		lights[LED_CH_LIGHT].setBrightness(std::fabs(closedHatSample));
 		float closedHatLeft, closedHatRight;
-		applyPan(closedHatVol, params[PAN_CH_PARAM].getValue(), closedHatLeft, closedHatRight);
+		DSPUtils::applyPan(closedHatSample, params[PAN_CH_PARAM].getValue(), closedHatLeft, closedHatRight);
 		mixLeft += closedHatLeft;
 		mixRight += closedHatRight;
 		
 
 		// Open Hat
 		float openHatSample = openHat.step();
-		float openHatVol = applyVolume(openHatSample, ohVol);
-		openHatVol = applyBoost(openHatVol, ohPush);
-		outputs[OUT_OH_OUTPUT].setVoltage(openHatVol * 5.f);
-		lights[LED_OH_LIGHT].setBrightness(std::fabs(openHatVol));
-
+		openHatSample = DSPUtils::applyBoost(openHatSample, ohPush);
+		openHatSample = DSPUtils::applyVolume(openHatSample, ohVol);
+		outputs[OUT_OH_OUTPUT].setVoltage(openHatSample * 5.f);
+		lights[LED_OH_LIGHT].setBrightness(std::fabs(openHatSample));
 		float openHatLeft, openHatRight;
-		applyPan(openHatVol, params[PAN_OH_PARAM].getValue(), openHatLeft, openHatRight);
+		DSPUtils::applyPan(openHatSample, params[PAN_OH_PARAM].getValue(), openHatLeft, openHatRight);
 		mixLeft += openHatLeft;
 		mixRight += openHatRight;
+
 
         // Salidas estéreo, escalado a ±5V
 		outputs[OUT_L_OUTPUT].setVoltage(mixLeft * 5.f);
