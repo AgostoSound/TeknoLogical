@@ -1,10 +1,13 @@
 #include "plugin.hpp"
+#include "rack.hpp"
+#include "dsp/filter.hpp"
+#include "dsp_utils.hpp"
 #include "../res/samples/kick.h"
 #include "../res/samples/snare.h"
 #include "../res/samples/clap.h"
 #include "../res/samples/openhat.h"
 #include "../res/samples/closedhat.h"
-#include "dsp_utils.hpp"
+using namespace rack;
 
 
 // General structure.
@@ -99,6 +102,9 @@ struct TL_Drum5 : Module {
 
     Voice kick, clap, snare, closedHat, openHat;
 
+	DSPUtils::LowPassFilter kickLowFilter, clapLowFilter, snareLowFilter, closedHatLowFilter, openHatLowFilter;
+	DSPUtils::HighPassFilter kickHighFilter, clapHighFilter, snareHighFilter, closedHatHighFilter, openHatHighFilter;
+
 // --------------------   Config module  -----------------------------------------
 	TL_Drum5() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -170,6 +176,7 @@ struct TL_Drum5 : Module {
 
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
+		float sampleRate = args.sampleRate;
 
 		// Get triggers.
 		float kkTrig, clTrig, snTrig, chTrig, ohTrig;
@@ -192,6 +199,13 @@ struct TL_Drum5 : Module {
 		snPush = params[PUSH_SN_PARAM].getValue();
 		chPush = params[PUSH_CH_PARAM].getValue();
 		ohPush = params[PUSH_OH_PARAM].getValue();
+		// Get filters.
+		float kkFilter, clFilter, snFilter, chFilter, ohFilter;
+		kkFilter = params[FILTER_KK_PARAM].getValue();
+		clFilter = params[FILTER_CL_PARAM].getValue();
+		snFilter = params[FILTER_SN_PARAM].getValue();
+		chFilter = params[FILTER_CH_PARAM].getValue();
+		ohFilter = params[FILTER_OH_PARAM].getValue();
 
 		// Triggers play samples.
         if (trigKick.process(kkTrig)) {kick.trigger(kick_sample, kick_sample_len);}
@@ -204,9 +218,12 @@ struct TL_Drum5 : Module {
 		float mixLeft = 0.f;
 		float mixRight = 0.f;
 
+		
 		// Kick
 		float kickSample = kick.step();
-		kickSample = DSPUtils::applyBoost(kickSample, kkPush);		
+		kickSample = DSPUtils::applyBoost(kickSample, kkPush);
+		kickSample = DSPUtils::applyLowPassFilter(kickSample, kkFilter, sampleRate, kickLowFilter);
+		kickSample = DSPUtils::applyHighPassFilter(kickSample, kkFilter, sampleRate, kickHighFilter);
 		kickSample = DSPUtils::applyVolume(kickSample, kkVol);		
 		outputs[OUT_KK_OUTPUT].setVoltage(kickSample * 5.f);
 		lights[LED_KK_LIGHT].setBrightness(std::fabs(kickSample));
@@ -219,6 +236,8 @@ struct TL_Drum5 : Module {
 		// Clap
 		float clapSample = clap.step();
 		clapSample = DSPUtils::applyBoost(clapSample, clPush);
+		clapSample = DSPUtils::applyLowPassFilter(clapSample, clFilter, sampleRate, clapLowFilter);
+		clapSample = DSPUtils::applyHighPassFilter(clapSample, clFilter, sampleRate, clapHighFilter);
 		clapSample = DSPUtils::applyVolume(clapSample, clVol);
 		outputs[OUT_CL_OUTPUT].setVoltage(clapSample * 5.f);
 		lights[LED_CL_LIGHT].setBrightness(std::fabs(clapSample));
@@ -231,6 +250,8 @@ struct TL_Drum5 : Module {
 		// Snare
 		float snareSample = snare.step();
 		snareSample = DSPUtils::applyBoost(snareSample, snPush);
+		snareSample = DSPUtils::applyLowPassFilter(snareSample, snFilter, sampleRate, snareLowFilter);
+		snareSample = DSPUtils::applyHighPassFilter(snareSample, snFilter, sampleRate, snareHighFilter);
 		snareSample = DSPUtils::applyVolume(snareSample, snVol);
 		outputs[OUT_SN_OUTPUT].setVoltage(snareSample * 5.f);
 		lights[LED_SN_LIGHT].setBrightness(std::fabs(snareSample));
@@ -243,6 +264,8 @@ struct TL_Drum5 : Module {
 		// Closed Hat
 		float closedHatSample = closedHat.step();
 		closedHatSample = DSPUtils::applyBoost(closedHatSample, chPush);
+		closedHatSample = DSPUtils::applyLowPassFilter(closedHatSample, chFilter, sampleRate, closedHatLowFilter);
+		closedHatSample = DSPUtils::applyHighPassFilter(closedHatSample, chFilter, sampleRate, closedHatHighFilter);
 		closedHatSample = DSPUtils::applyVolume(closedHatSample, chVol);
 		outputs[OUT_CH_OUTPUT].setVoltage(closedHatSample * 5.f);
 		lights[LED_CH_LIGHT].setBrightness(std::fabs(closedHatSample));
@@ -251,10 +274,12 @@ struct TL_Drum5 : Module {
 		mixLeft += closedHatLeft;
 		mixRight += closedHatRight;
 		
-
+		
 		// Open Hat
 		float openHatSample = openHat.step();
 		openHatSample = DSPUtils::applyBoost(openHatSample, ohPush);
+		openHatSample = DSPUtils::applyLowPassFilter(openHatSample, ohFilter, sampleRate, openHatLowFilter);
+		openHatSample = DSPUtils::applyHighPassFilter(openHatSample, ohFilter, sampleRate, openHatHighFilter);
 		openHatSample = DSPUtils::applyVolume(openHatSample, ohVol);
 		outputs[OUT_OH_OUTPUT].setVoltage(openHatSample * 5.f);
 		lights[LED_OH_LIGHT].setBrightness(std::fabs(openHatSample));

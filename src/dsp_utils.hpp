@@ -1,9 +1,49 @@
 #pragma once
-#include "plugin.hpp"
+#include "rack.hpp"
+#include "dsp/filter.hpp"
+using namespace rack;
 
 
 // General DSP.
 namespace DSPUtils {
+
+    struct LowPassFilter {
+        float y = 0.f;
+        float alpha = 1.f;
+
+        void setCutoff(float cutoff, float sampleRate) {
+            float rc = 1.f / (2.f * M_PI * cutoff);
+            float dt = 1.f / sampleRate;
+            alpha = dt / (rc + dt);
+            alpha = clamp(alpha, 0.f, 1.f);
+        }
+
+        float process(float input) {
+            y += alpha * (input - y);
+            return y;
+        }
+    };
+
+    struct HighPassFilter {
+        float y = 0.f;
+        float x = 0.f;
+        float alpha = 1.f;
+
+        void setCutoff(float cutoff, float sampleRate) {
+            float rc = 1.f / (2.f * M_PI * cutoff);
+            float dt = 1.f / sampleRate;
+            alpha = rc / (rc + dt);
+            alpha = clamp(alpha, 0.f, 1.f);
+        }
+
+        float process(float input) {
+            float out = alpha * (y + input - x);
+            x = input;
+            y = out;
+            return out;
+        }
+    };
+
 
 	inline float applyVolume(float signal, float volumeParam) {
 		float gain = clamp(volumeParam / 10.f, 0.f, 1.f);  // volumen normalizado [0..1]
@@ -24,5 +64,26 @@ namespace DSPUtils {
 		}
 		return signal;
 	}
+
+    inline float applyLowPassFilter(float input, float filterParam, float sampleRate, LowPassFilter& filter) {
+        if (filterParam < 0.f) {
+            // Mapeo logarítmico: -10..0 → 50..20000 Hz
+            float cutoffFreq = std::pow(10.f, rescale(filterParam, -10.f, 0.f, std::log10(20.f), std::log10(20000.f)));
+            filter.setCutoff(cutoffFreq, sampleRate);
+            return filter.process(input);
+        }
+        return input;
+    }
+
+    inline float applyHighPassFilter(float input, float filterParam, float sampleRate, HighPassFilter& filter) {
+        if (filterParam > 0.f) {
+            // Mapeo logarítmico: 0..+10 → 20..20000 Hz
+            float cutoffFreq = std::pow(10.f, rescale(filterParam, 0.f, 10.f, std::log10(20.f), std::log10(20000.f)));
+            filter.setCutoff(cutoffFreq, sampleRate);
+            return filter.process(input);
+        }
+        return input;
+    }
+
 
 }
