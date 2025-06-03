@@ -44,6 +44,34 @@ namespace DSPUtils {
         }
     };
 
+    struct DecayEnvelope {
+        float value = 0.f;
+        float decayCoeff = 0.f;
+
+        void trigger(float decayParam, float sampleRate) {
+            // Mapear decayParam de [-10, +10] a [0.005, 2.0] segundos (logarítmico)
+            const float minTime = 0.08f;
+            const float maxTime = 0.8f;
+            float normalized = (decayParam + 10.f) / 20.f;
+            float decayTime = minTime * std::pow(maxTime / minTime, normalized); // escala logarítmica
+
+            // Evitar división por cero
+            decayTime = std::max(decayTime, 0.001f);
+            decayCoeff = std::exp(-1.f / (decayTime * sampleRate));
+            value = 1.f;
+        }
+
+
+        float process() {
+            value *= decayCoeff;
+            return value;
+        }
+
+        bool isActive() const {
+            return value > 0.001f;
+        }
+    };
+
 
 	inline float applyVolume(float signal, float volumeParam) {
 		float gain = clamp(volumeParam / 10.f, 0.f, 1.f);  // volumen normalizado [0..1]
@@ -84,6 +112,5 @@ namespace DSPUtils {
         }
         return input;
     }
-
 
 }

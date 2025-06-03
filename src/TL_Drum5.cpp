@@ -104,6 +104,7 @@ struct TL_Drum5 : Module {
 
 	DSPUtils::LowPassFilter kickLowFilter, clapLowFilter, snareLowFilter, closedHatLowFilter, openHatLowFilter;
 	DSPUtils::HighPassFilter kickHighFilter, clapHighFilter, snareHighFilter, closedHatHighFilter, openHatHighFilter;
+	DSPUtils::DecayEnvelope kickEnvelope, clapEnvelope, snareEnvelope, closedHatEnvelope, openHatEnvelope;
 
 // --------------------   Config module  -----------------------------------------
 	TL_Drum5() {
@@ -206,21 +207,34 @@ struct TL_Drum5 : Module {
 		snFilter = params[FILTER_SN_PARAM].getValue();
 		chFilter = params[FILTER_CH_PARAM].getValue();
 		ohFilter = params[FILTER_OH_PARAM].getValue();
+		// Get decays.
+		float kkDecay, clDecay, snDecay, chDecay, ohDecay;
+		kkDecay = params[DECAY_KK_PARAM].getValue();
+		clDecay = params[DECAY_CL_PARAM].getValue();
+		snDecay = params[DECAY_SN_PARAM].getValue();
+		chDecay = params[DECAY_CH_PARAM].getValue();
+		ohDecay = params[DECAY_OH_PARAM].getValue();
+
 
 		// Triggers play samples.
-        if (trigKick.process(kkTrig)) {kick.trigger(kick_sample, kick_sample_len);}
-        if (trigClap.process(clTrig)) {clap.trigger(clap_sample, clap_sample_len);}
-        if (trigSnare.process(snTrig)) {snare.trigger(snare_sample, snare_sample_len);}
-        if (trigClosedHat.process(chTrig)) {closedHat.trigger(closedhat_sample, closedhat_sample_len);}
-        if (trigOpenHat.process(ohTrig)) {openHat.trigger(openhat_sample, openhat_sample_len);}
+        if (trigKick.process(kkTrig)) 
+		{kick.trigger(kick_sample, kick_sample_len); kickEnvelope.trigger(kkDecay, sampleRate);}
+        if (trigClap.process(clTrig)) 
+		{clap.trigger(clap_sample, clap_sample_len); clapEnvelope.trigger(clDecay, sampleRate);}
+        if (trigSnare.process(snTrig)) 
+		{snare.trigger(snare_sample, snare_sample_len); snareEnvelope.trigger(snDecay, sampleRate);}
+        if (trigClosedHat.process(chTrig)) 
+		{closedHat.trigger(closedhat_sample, closedhat_sample_len); closedHatEnvelope.trigger(chDecay, sampleRate);}
+        if (trigOpenHat.process(ohTrig)) 
+		{openHat.trigger(openhat_sample, openhat_sample_len); openHatEnvelope.trigger(ohDecay, sampleRate);}
 
 		// Variables para mezcla estéreo
 		float mixLeft = 0.f;
 		float mixRight = 0.f;
 
-		
 		// Kick
 		float kickSample = kick.step();
+		kickSample *= kickEnvelope.process(); 
 		kickSample = DSPUtils::applyBoost(kickSample, kkPush);
 		kickSample = DSPUtils::applyLowPassFilter(kickSample, kkFilter, sampleRate, kickLowFilter);
 		kickSample = DSPUtils::applyHighPassFilter(kickSample, kkFilter, sampleRate, kickHighFilter);
@@ -235,6 +249,7 @@ struct TL_Drum5 : Module {
 		
 		// Clap
 		float clapSample = clap.step();
+		clapSample *= clapEnvelope.process(); 
 		clapSample = DSPUtils::applyBoost(clapSample, clPush);
 		clapSample = DSPUtils::applyLowPassFilter(clapSample, clFilter, sampleRate, clapLowFilter);
 		clapSample = DSPUtils::applyHighPassFilter(clapSample, clFilter, sampleRate, clapHighFilter);
@@ -249,6 +264,7 @@ struct TL_Drum5 : Module {
 		
 		// Snare
 		float snareSample = snare.step();
+		snareSample *= snareEnvelope.process();
 		snareSample = DSPUtils::applyBoost(snareSample, snPush);
 		snareSample = DSPUtils::applyLowPassFilter(snareSample, snFilter, sampleRate, snareLowFilter);
 		snareSample = DSPUtils::applyHighPassFilter(snareSample, snFilter, sampleRate, snareHighFilter);
@@ -263,6 +279,7 @@ struct TL_Drum5 : Module {
 		
 		// Closed Hat
 		float closedHatSample = closedHat.step();
+		closedHatSample *= closedHatEnvelope.process();
 		closedHatSample = DSPUtils::applyBoost(closedHatSample, chPush);
 		closedHatSample = DSPUtils::applyLowPassFilter(closedHatSample, chFilter, sampleRate, closedHatLowFilter);
 		closedHatSample = DSPUtils::applyHighPassFilter(closedHatSample, chFilter, sampleRate, closedHatHighFilter);
@@ -277,6 +294,7 @@ struct TL_Drum5 : Module {
 		
 		// Open Hat
 		float openHatSample = openHat.step();
+		openHatSample *= openHatEnvelope.process();
 		openHatSample = DSPUtils::applyBoost(openHatSample, ohPush);
 		openHatSample = DSPUtils::applyLowPassFilter(openHatSample, ohFilter, sampleRate, openHatLowFilter);
 		openHatSample = DSPUtils::applyHighPassFilter(openHatSample, ohFilter, sampleRate, openHatHighFilter);
