@@ -214,6 +214,13 @@ struct TL_Drum5 : Module {
 		snDecay = params[DECAY_SN_PARAM].getValue();
 		chDecay = params[DECAY_CH_PARAM].getValue();
 		ohDecay = params[DECAY_OH_PARAM].getValue();
+		// Get links.
+		float kkLink, clLink, snLink, chLink, ohLink;
+		kkLink = params[LINK_KK_PARAM].getValue();
+		clLink = params[LINK_CL_PARAM].getValue();
+		snLink = params[LINK_SN_PARAM].getValue();
+		chLink = params[LINK_CH_PARAM].getValue();
+		ohLink = params[LINK_OH_PARAM].getValue();
 
 
 		// Triggers play samples.
@@ -241,10 +248,14 @@ struct TL_Drum5 : Module {
 		kickSample = DSPUtils::applyVolume(kickSample, kkVol);		
 		outputs[OUT_KK_OUTPUT].setVoltage(kickSample * 5.f);
 		lights[LED_KK_LIGHT].setBrightness(std::fabs(kickSample));
-		float kickLeft, kickRight;
-		DSPUtils::applyPan(kickSample, params[PAN_KK_PARAM].getValue(), kickLeft, kickRight);
-		mixLeft += kickLeft;
-		mixRight += kickRight;
+		if (kkLink == 0.f) 
+		{
+			float kickLeft, kickRight;
+			DSPUtils::applyPan(kickSample, params[PAN_KK_PARAM].getValue(), kickLeft, kickRight);
+			mixLeft += kickLeft;
+			mixRight += kickRight;
+		}
+		
 		
 		
 		// Clap
@@ -256,10 +267,14 @@ struct TL_Drum5 : Module {
 		clapSample = DSPUtils::applyVolume(clapSample, clVol);
 		outputs[OUT_CL_OUTPUT].setVoltage(clapSample * 5.f);
 		lights[LED_CL_LIGHT].setBrightness(std::fabs(clapSample));
-		float clapLeft, clapRight;
-		DSPUtils::applyPan(clapSample, params[PAN_CL_PARAM].getValue(), clapLeft, clapRight);
-		mixLeft += clapLeft;
-		mixRight += clapRight;
+		if (clLink == 0.f) 
+		{
+			float clapLeft, clapRight;
+			DSPUtils::applyPan(clapSample, params[PAN_CL_PARAM].getValue(), clapLeft, clapRight);
+			mixLeft += clapLeft;
+			mixRight += clapRight;
+		}
+		
 		
 		
 		// Snare
@@ -271,10 +286,13 @@ struct TL_Drum5 : Module {
 		snareSample = DSPUtils::applyVolume(snareSample, snVol);
 		outputs[OUT_SN_OUTPUT].setVoltage(snareSample * 5.f);
 		lights[LED_SN_LIGHT].setBrightness(std::fabs(snareSample));
-		float snareLeft, snareRight;
-		DSPUtils::applyPan(snareSample, params[PAN_SN_PARAM].getValue(), snareLeft, snareRight);
-		mixLeft += snareLeft;
-		mixRight += snareRight;
+		if (snLink == 0.f) 
+		{
+			float snareLeft, snareRight;
+			DSPUtils::applyPan(snareSample, params[PAN_SN_PARAM].getValue(), snareLeft, snareRight);
+			mixLeft += snareLeft;
+			mixRight += snareRight;
+		}
 		
 		
 		// Closed Hat
@@ -286,10 +304,13 @@ struct TL_Drum5 : Module {
 		closedHatSample = DSPUtils::applyVolume(closedHatSample, chVol);
 		outputs[OUT_CH_OUTPUT].setVoltage(closedHatSample * 5.f);
 		lights[LED_CH_LIGHT].setBrightness(std::fabs(closedHatSample));
-		float closedHatLeft, closedHatRight;
-		DSPUtils::applyPan(closedHatSample, params[PAN_CH_PARAM].getValue(), closedHatLeft, closedHatRight);
-		mixLeft += closedHatLeft;
-		mixRight += closedHatRight;
+		if (chLink == 0.f) 
+		{
+			float closedHatLeft, closedHatRight;
+			DSPUtils::applyPan(closedHatSample, params[PAN_CH_PARAM].getValue(), closedHatLeft, closedHatRight);
+			mixLeft += closedHatLeft;
+			mixRight += closedHatRight;
+		}
 		
 		
 		// Open Hat
@@ -301,10 +322,13 @@ struct TL_Drum5 : Module {
 		openHatSample = DSPUtils::applyVolume(openHatSample, ohVol);
 		outputs[OUT_OH_OUTPUT].setVoltage(openHatSample * 5.f);
 		lights[LED_OH_LIGHT].setBrightness(std::fabs(openHatSample));
-		float openHatLeft, openHatRight;
-		DSPUtils::applyPan(openHatSample, params[PAN_OH_PARAM].getValue(), openHatLeft, openHatRight);
-		mixLeft += openHatLeft;
-		mixRight += openHatRight;
+		if (ohLink == 0.f) 
+		{
+			float openHatLeft, openHatRight;
+			DSPUtils::applyPan(openHatSample, params[PAN_OH_PARAM].getValue(), openHatLeft, openHatRight);
+			mixLeft += openHatLeft;
+			mixRight += openHatRight;
+		}
 
 
         // Salidas estéreo, escalado a ±5V
