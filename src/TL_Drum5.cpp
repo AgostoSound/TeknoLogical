@@ -1,3 +1,5 @@
+#include <iostream>
+#include <tuple>
 #include "plugin.hpp"
 #include "rack.hpp"
 #include "dsp/filter.hpp"
@@ -173,163 +175,74 @@ struct TL_Drum5 : Module {
 
 // --------------------   Functions  ---------------------------------------------
 
+	// Process per channel.
+	std::tuple<float, float> processChannel(float trigger_in, float vol_in, float push_in, float filter_in, float decay_in, 
+										float link_in, dsp::SchmittTrigger& schmittTrig, Voice& voice, DSPUtils::DecayEnvelope& envelope,
+										float sampleRate, DSPUtils::LowPassFilter& lowFilter, DSPUtils::HighPassFilter& highFilter, 
+										float individual_out, float led_out, float pan_in, float mixLeft, float mixRight, 
+										const int16_t* sample_data, int sample_len) {		
+		// Get input values.
+		float trigger = inputs[trigger_in].getVoltage();
+		float volume = params[vol_in].getValue();
+		float push = params[push_in].getValue();
+		float filter = params[filter_in].getValue();
+		float decay = params[decay_in].getValue();
+		float link = params[link_in].getValue();
+		float pan = params[pan_in].getValue();
+		
+		// Trigger plays samples.
+        if (schmittTrig.process(trigger)) 
+		{voice.trigger(sample_data, sample_len); envelope.trigger(decay, sampleRate);}
+
+		// Sample processors.
+		float sample = voice.step();
+		sample *= envelope.process(); 
+		sample = DSPUtils::applyBoost(sample, push);
+		sample = DSPUtils::applyLowPassFilter(sample, filter, sampleRate, lowFilter);
+		sample = DSPUtils::applyHighPassFilter(sample, filter, sampleRate, highFilter);
+		sample = DSPUtils::applyVolume(sample, volume);		
+		
+		outputs[individual_out].setVoltage(sample * 5.f);
+		lights[led_out].setBrightness(std::fabs(sample));
+		if (link == 0.f) 
+		{
+			float masterLeft, masterRight;
+			DSPUtils::applyPan(sample, pan, masterLeft, masterRight);
+			mixLeft += masterLeft;
+			mixRight += masterRight;
+		}
+
+        return std::make_tuple(mixLeft, mixRight);
+    }
 
 
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
 		float sampleRate = args.sampleRate;
 
-		// Get triggers.
-		float kkTrig, clTrig, snTrig, chTrig, ohTrig;
-		kkTrig = inputs[IN_KK_INPUT].getVoltage();
-		clTrig = inputs[IN_CL_INPUT].getVoltage();
-		snTrig = inputs[IN_SN_INPUT].getVoltage();
-		chTrig = inputs[IN_CH_INPUT].getVoltage();
-		ohTrig = inputs[IN_OH_INPUT].getVoltage();
-		// Get vols.
-		float kkVol, clVol, snVol, chVol, ohVol;
-		kkVol = params[VOL_KK_PARAM].getValue();
-		clVol = params[VOL_CL_PARAM].getValue();
-		snVol = params[VOL_SN_PARAM].getValue();
-		chVol = params[VOL_CH_PARAM].getValue();
-		ohVol = params[VOL_OH_PARAM].getValue();
-		// Get pushes.
-		float kkPush, clPush, snPush, chPush, ohPush;
-		kkPush = params[PUSH_KK_PARAM].getValue();
-		clPush = params[PUSH_CL_PARAM].getValue();
-		snPush = params[PUSH_SN_PARAM].getValue();
-		chPush = params[PUSH_CH_PARAM].getValue();
-		ohPush = params[PUSH_OH_PARAM].getValue();
-		// Get filters.
-		float kkFilter, clFilter, snFilter, chFilter, ohFilter;
-		kkFilter = params[FILTER_KK_PARAM].getValue();
-		clFilter = params[FILTER_CL_PARAM].getValue();
-		snFilter = params[FILTER_SN_PARAM].getValue();
-		chFilter = params[FILTER_CH_PARAM].getValue();
-		ohFilter = params[FILTER_OH_PARAM].getValue();
-		// Get decays.
-		float kkDecay, clDecay, snDecay, chDecay, ohDecay;
-		kkDecay = params[DECAY_KK_PARAM].getValue();
-		clDecay = params[DECAY_CL_PARAM].getValue();
-		snDecay = params[DECAY_SN_PARAM].getValue();
-		chDecay = params[DECAY_CH_PARAM].getValue();
-		ohDecay = params[DECAY_OH_PARAM].getValue();
-		// Get links.
-		float kkLink, clLink, snLink, chLink, ohLink;
-		kkLink = params[LINK_KK_PARAM].getValue();
-		clLink = params[LINK_CL_PARAM].getValue();
-		snLink = params[LINK_SN_PARAM].getValue();
-		chLink = params[LINK_CH_PARAM].getValue();
-		ohLink = params[LINK_OH_PARAM].getValue();
-
-
-		// Triggers play samples.
-        if (trigKick.process(kkTrig)) 
-		{kick.trigger(kick_sample, kick_sample_len); kickEnvelope.trigger(kkDecay, sampleRate);}
-        if (trigClap.process(clTrig)) 
-		{clap.trigger(clap_sample, clap_sample_len); clapEnvelope.trigger(clDecay, sampleRate);}
-        if (trigSnare.process(snTrig)) 
-		{snare.trigger(snare_sample, snare_sample_len); snareEnvelope.trigger(snDecay, sampleRate);}
-        if (trigClosedHat.process(chTrig)) 
-		{closedHat.trigger(closedhat_sample, closedhat_sample_len); closedHatEnvelope.trigger(chDecay, sampleRate);}
-        if (trigOpenHat.process(ohTrig)) 
-		{openHat.trigger(openhat_sample, openhat_sample_len); openHatEnvelope.trigger(ohDecay, sampleRate);}
-
 		// Variables para mezcla estéreo
 		float mixLeft = 0.f;
 		float mixRight = 0.f;
 
-		// Kick
-		float kickSample = kick.step();
-		kickSample *= kickEnvelope.process(); 
-		kickSample = DSPUtils::applyBoost(kickSample, kkPush);
-		kickSample = DSPUtils::applyLowPassFilter(kickSample, kkFilter, sampleRate, kickLowFilter);
-		kickSample = DSPUtils::applyHighPassFilter(kickSample, kkFilter, sampleRate, kickHighFilter);
-		kickSample = DSPUtils::applyVolume(kickSample, kkVol);		
-		outputs[OUT_KK_OUTPUT].setVoltage(kickSample * 5.f);
-		lights[LED_KK_LIGHT].setBrightness(std::fabs(kickSample));
-		if (kkLink == 0.f) 
-		{
-			float kickLeft, kickRight;
-			DSPUtils::applyPan(kickSample, params[PAN_KK_PARAM].getValue(), kickLeft, kickRight);
-			mixLeft += kickLeft;
-			mixRight += kickRight;
-		}
-		
-		
-		
-		// Clap
-		float clapSample = clap.step();
-		clapSample *= clapEnvelope.process(); 
-		clapSample = DSPUtils::applyBoost(clapSample, clPush);
-		clapSample = DSPUtils::applyLowPassFilter(clapSample, clFilter, sampleRate, clapLowFilter);
-		clapSample = DSPUtils::applyHighPassFilter(clapSample, clFilter, sampleRate, clapHighFilter);
-		clapSample = DSPUtils::applyVolume(clapSample, clVol);
-		outputs[OUT_CL_OUTPUT].setVoltage(clapSample * 5.f);
-		lights[LED_CL_LIGHT].setBrightness(std::fabs(clapSample));
-		if (clLink == 0.f) 
-		{
-			float clapLeft, clapRight;
-			DSPUtils::applyPan(clapSample, params[PAN_CL_PARAM].getValue(), clapLeft, clapRight);
-			mixLeft += clapLeft;
-			mixRight += clapRight;
-		}
-		
-		
-		
-		// Snare
-		float snareSample = snare.step();
-		snareSample *= snareEnvelope.process();
-		snareSample = DSPUtils::applyBoost(snareSample, snPush);
-		snareSample = DSPUtils::applyLowPassFilter(snareSample, snFilter, sampleRate, snareLowFilter);
-		snareSample = DSPUtils::applyHighPassFilter(snareSample, snFilter, sampleRate, snareHighFilter);
-		snareSample = DSPUtils::applyVolume(snareSample, snVol);
-		outputs[OUT_SN_OUTPUT].setVoltage(snareSample * 5.f);
-		lights[LED_SN_LIGHT].setBrightness(std::fabs(snareSample));
-		if (snLink == 0.f) 
-		{
-			float snareLeft, snareRight;
-			DSPUtils::applyPan(snareSample, params[PAN_SN_PARAM].getValue(), snareLeft, snareRight);
-			mixLeft += snareLeft;
-			mixRight += snareRight;
-		}
-		
-		
-		// Closed Hat
-		float closedHatSample = closedHat.step();
-		closedHatSample *= closedHatEnvelope.process();
-		closedHatSample = DSPUtils::applyBoost(closedHatSample, chPush);
-		closedHatSample = DSPUtils::applyLowPassFilter(closedHatSample, chFilter, sampleRate, closedHatLowFilter);
-		closedHatSample = DSPUtils::applyHighPassFilter(closedHatSample, chFilter, sampleRate, closedHatHighFilter);
-		closedHatSample = DSPUtils::applyVolume(closedHatSample, chVol);
-		outputs[OUT_CH_OUTPUT].setVoltage(closedHatSample * 5.f);
-		lights[LED_CH_LIGHT].setBrightness(std::fabs(closedHatSample));
-		if (chLink == 0.f) 
-		{
-			float closedHatLeft, closedHatRight;
-			DSPUtils::applyPan(closedHatSample, params[PAN_CH_PARAM].getValue(), closedHatLeft, closedHatRight);
-			mixLeft += closedHatLeft;
-			mixRight += closedHatRight;
-		}
-		
-		
-		// Open Hat
-		float openHatSample = openHat.step();
-		openHatSample *= openHatEnvelope.process();
-		openHatSample = DSPUtils::applyBoost(openHatSample, ohPush);
-		openHatSample = DSPUtils::applyLowPassFilter(openHatSample, ohFilter, sampleRate, openHatLowFilter);
-		openHatSample = DSPUtils::applyHighPassFilter(openHatSample, ohFilter, sampleRate, openHatHighFilter);
-		openHatSample = DSPUtils::applyVolume(openHatSample, ohVol);
-		outputs[OUT_OH_OUTPUT].setVoltage(openHatSample * 5.f);
-		lights[LED_OH_LIGHT].setBrightness(std::fabs(openHatSample));
-		if (ohLink == 0.f) 
-		{
-			float openHatLeft, openHatRight;
-			DSPUtils::applyPan(openHatSample, params[PAN_OH_PARAM].getValue(), openHatLeft, openHatRight);
-			mixLeft += openHatLeft;
-			mixRight += openHatRight;
-		}
+		std::tie(mixLeft, mixRight) = processChannel(IN_KK_INPUT, VOL_KK_PARAM, PUSH_KK_PARAM, FILTER_KK_PARAM, DECAY_KK_PARAM, 
+			LINK_KK_PARAM, trigKick, kick, kickEnvelope, sampleRate, kickLowFilter, kickHighFilter, OUT_KK_OUTPUT, LED_KK_LIGHT, 
+			PAN_KK_PARAM, mixLeft, mixRight, kick_sample, kick_sample_len);
 
+		std::tie(mixLeft, mixRight) = processChannel(IN_SN_INPUT, VOL_SN_PARAM, PUSH_SN_PARAM, FILTER_SN_PARAM, DECAY_SN_PARAM, 
+			LINK_SN_PARAM, trigSnare, snare, snareEnvelope, sampleRate, snareLowFilter, snareHighFilter, OUT_SN_OUTPUT, LED_SN_LIGHT, 
+			PAN_SN_PARAM, mixLeft, mixRight, snare_sample, snare_sample_len);
+
+		std::tie(mixLeft, mixRight) = processChannel(IN_CL_INPUT, VOL_CL_PARAM, PUSH_CL_PARAM, FILTER_CL_PARAM, DECAY_CL_PARAM, 
+			LINK_CL_PARAM, trigClap, clap, clapEnvelope, sampleRate, clapLowFilter, clapHighFilter, OUT_CL_OUTPUT, LED_CL_LIGHT, 
+			PAN_CL_PARAM, mixLeft, mixRight, clap_sample, clap_sample_len);
+
+		std::tie(mixLeft, mixRight) = processChannel(IN_CH_INPUT, VOL_CH_PARAM, PUSH_CH_PARAM, FILTER_CH_PARAM, DECAY_CH_PARAM, 
+			LINK_CH_PARAM, trigClosedHat, closedHat, closedHatEnvelope, sampleRate, closedHatLowFilter, closedHatHighFilter, 
+			OUT_CH_OUTPUT, LED_CH_LIGHT, PAN_CH_PARAM, mixLeft, mixRight, closedhat_sample, closedhat_sample_len);
+
+		std::tie(mixLeft, mixRight) = processChannel(IN_OH_INPUT, VOL_OH_PARAM, PUSH_OH_PARAM, FILTER_OH_PARAM, DECAY_OH_PARAM, 
+			LINK_OH_PARAM, trigOpenHat, openHat, openHatEnvelope, sampleRate, openHatLowFilter, openHatHighFilter, OUT_OH_OUTPUT, 
+			LED_OH_LIGHT, PAN_OH_PARAM, mixLeft, mixRight, openhat_sample, openhat_sample_len);
 
         // Salidas estéreo, escalado a ±5V
 		outputs[OUT_L_OUTPUT].setVoltage(mixLeft * 5.f);
