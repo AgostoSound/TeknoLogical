@@ -1,0 +1,41 @@
+name: Build VCV Rack Plugin
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive  # Clona también el Rack-SDK
+
+    - name: Set up environment
+      run: |
+        echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
+        echo "BUILD_FLAGS=-j$(nproc)" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Build plugin
+      run: make RACK_DIR=$RACK_DIR $BUILD_FLAGS
+      shell: bash
+
+    - name: Archive build
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.os }}-plugin
+        path: |
+          plugin.dylib
+          plugin.dll
+          plugin.so
+        if-no-files-found: ignore
