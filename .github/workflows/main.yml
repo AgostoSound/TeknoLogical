@@ -18,7 +18,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
-        submodules: recursive  # Clona también el Rack-SDK
+        submodules: recursive
 
     - name: Set up environment
       run: |
@@ -30,12 +30,26 @@ jobs:
       run: make RACK_DIR=$RACK_DIR $BUILD_FLAGS
       shell: bash
 
-    - name: Archive build
-      uses: actions/upload-artifact@v2
+    - name: Upload plugin binary (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.os }}-plugin
-        path: |
-          plugin.dylib
-          plugin.dll
-          plugin.so
+        name: windows-plugin
+        path: plugin.dll
+        if-no-files-found: ignore
+
+    - name: Upload plugin binary (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-plugin
+        path: plugin.so
+        if-no-files-found: ignore
+
+    - name: Upload plugin binary (macOS)
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v3
+      with:
+        name: macos-plugin
+        path: plugin.dylib
         if-no-files-found: ignore
