@@ -24,7 +24,7 @@ jobs:
           unzip .github/sdk/Rack-SDK-2.4.1-lin-x64.zip
           echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
         elif [[ "$RUNNER_OS" == "Windows" ]]; then
-          powershell -Command "Expand-Archive -Path .github/sdk/Rack-SDK-2.4.1-win-x64.zip -DestinationPath .""
+          powershell -Command "Expand-Archive -Path .github/sdk/Rack-SDK-2.4.1-win-x64.zip -DestinationPath ."
         elif [[ "$RUNNER_OS" == "macOS" ]]; then
           unzip .github/sdk/Rack-SDK-2.4.1-mac-x64.zip
           echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
