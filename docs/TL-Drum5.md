@@ -1,4 +1,6 @@
-# TL_Drum5
+# TL-Drum5
+
+![Captura de pantalla 2025-06-05 165659](https://github.com/user-attachments/assets/b5115202-4e80-4b0c-99bd-94dc2f96103e)
 
 A 5-channel drum sample player for VCV Rack. Each channel has its own trigger, envelope, filter, panning, and volume control. Ideal for building drum grooves with tight control and a clean stereo mix.
 
