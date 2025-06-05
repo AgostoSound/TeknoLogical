@@ -32,7 +32,7 @@ jobs:
 
     - name: Upload plugin binary (Windows)
       if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: windows-plugin
         path: plugin.dll
@@ -40,7 +40,7 @@ jobs:
 
     - name: Upload plugin binary (Linux)
       if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: linux-plugin
         path: plugin.so
@@ -48,7 +48,7 @@ jobs:
 
     - name: Upload plugin binary (macOS)
       if: matrix.os == 'macos-latest'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: macos-plugin
         path: plugin.dylib
