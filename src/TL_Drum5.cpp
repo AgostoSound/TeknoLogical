@@ -246,7 +246,7 @@ struct TL_Drum5 : Module {
 
         // Salidas estéreo, escalado a ±5V
 		outputs[OUT_L_OUTPUT].setVoltage(mixLeft * 5.f);
-		outputs[OUT_R_OUTPUT].setVoltage(mixRight * 5.f);
+		outputs[OUT_R_OUTPUT].setVoltage(mixRight * 5.f)
 
 	}
 };
