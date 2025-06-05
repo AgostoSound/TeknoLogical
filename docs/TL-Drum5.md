@@ -42,7 +42,7 @@ Each trigger fires the corresponding sample with a custom envelope and processin
 
 ## 🔁 Typical Use
 
-Use TL_Drum5 to create quick and customizable drum lines. Connect sequencer triggers, tweak filters for tonal variety, pan your channels for stereo width, and optionally route some voices out individually for external processing or mixing.
+Use TL-Drum5 to create quick and customizable drum lines. Connect sequencer triggers, tweak filters for tonal variety, pan your channels for stereo width, and optionally route some voices out individually for external processing or mixing.
 
 ---
 
