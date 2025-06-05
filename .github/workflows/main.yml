@@ -17,11 +17,12 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-      with:
-        submodules: recursive
 
-    - name: Set up environment
+    - name: Download Rack SDK
       run: |
+        curl -L -o Rack-SDK.zip https://vcvrack.com/downloads/Rack-SDK-2.4.1-${{ matrix.os == 'windows-latest' && 'win' || matrix.os == 'ubuntu-latest' && 'lin' || 'mac' }}.zip
+        unzip Rack-SDK.zip
+        mv Rack-SDK-* Rack-SDK
         echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
         echo "BUILD_FLAGS=-j$(nproc)" >> $GITHUB_ENV
       shell: bash
