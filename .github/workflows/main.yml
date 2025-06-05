@@ -21,12 +21,12 @@ jobs:
     - name: Set up SDK based on OS
       run: |
         if [[ "$RUNNER_OS" == "Linux" ]]; then
-          unzip .github/sdk/Rack-SDK-2.4.1-lin.zip
+          unzip .github/sdk/Rack-SDK-2.4.1-lin-x64.zip
           mv Rack-SDK-2.4.1 Rack-SDK
         elif [[ "$RUNNER_OS" == "Windows" ]]; then
-          powershell -Command "Expand-Archive -Path .github/sdk/Rack-SDK-2.4.1-win.zip -DestinationPath .; Rename-Item Rack-SDK-2.4.1 Rack-SDK"
+          powershell -Command "Expand-Archive -Path .github/sdk/Rack-SDK-2.4.1-win-x64.zip -DestinationPath .; Rename-Item Rack-SDK-2.4.1 Rack-SDK"
         elif [[ "$RUNNER_OS" == "macOS" ]]; then
-          unzip .github/sdk/Rack-SDK-2.4.1-mac.zip
+          unzip .github/sdk/Rack-SDK-2.4.1-mac-x64.zip
           mv Rack-SDK-2.4.1 Rack-SDK
         fi
         echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
