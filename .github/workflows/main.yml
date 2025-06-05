@@ -12,45 +12,37 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Download Rack SDK
+    - name: Set up SDK based on OS
       run: |
-        curl -L -o Rack-SDK.zip https://vcvrack.com/downloads/Rack-SDK-2.4.1-${{ matrix.os == 'windows-latest' && 'win' || matrix.os == 'ubuntu-latest' && 'lin' || 'mac' }}.zip
-        unzip Rack-SDK.zip
-        mv Rack-SDK-* Rack-SDK
+        if [[ "$RUNNER_OS" == "Linux" ]]; then
+          unzip .github/sdk/Rack-SDK-2.4.1-lin.zip
+          mv Rack-SDK-2.4.1 Rack-SDK
+        elif [[ "$RUNNER_OS" == "Windows" ]]; then
+          powershell -Command "Expand-Archive -Path .github/sdk/Rack-SDK-2.4.1-win.zip -DestinationPath .; Rename-Item Rack-SDK-2.4.1 Rack-SDK"
+        elif [[ "$RUNNER_OS" == "macOS" ]]; then
+          unzip .github/sdk/Rack-SDK-2.4.1-mac.zip
+          mv Rack-SDK-2.4.1 Rack-SDK
+        fi
         echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
-        echo "BUILD_FLAGS=-j$(nproc)" >> $GITHUB_ENV
+        echo "BUILD_FLAGS=-j$(nproc || sysctl -n hw.ncpu)" >> $GITHUB_ENV
       shell: bash
 
     - name: Build plugin
       run: make RACK_DIR=$RACK_DIR $BUILD_FLAGS
       shell: bash
 
-    - name: Upload plugin binary (Windows)
-      if: matrix.os == 'windows-latest'
+    - name: Archive build
       uses: actions/upload-artifact@v4
       with:
-        name: windows-plugin
-        path: plugin.dll
-        if-no-files-found: ignore
-
-    - name: Upload plugin binary (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: linux-plugin
-        path: plugin.so
-        if-no-files-found: ignore
-
-    - name: Upload plugin binary (macOS)
-      if: matrix.os == 'macos-latest'
-      uses: actions/upload-artifact@v4
-      with:
-        name: macos-plugin
-        path: plugin.dylib
+        name: ${{ matrix.os }}-plugin
+        path: |
+          plugin.dll
+          plugin.dylib
+          plugin.so
         if-no-files-found: ignore
