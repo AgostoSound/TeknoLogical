@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]  # Windows excluido aquí
 
     steps:
     - name: Checkout code
@@ -23,13 +23,10 @@ jobs:
         if [[ "$RUNNER_OS" == "Linux" ]]; then
           unzip .github/sdk/Rack-SDK-2.4.1-lin-x64.zip
           echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
-        elif [[ "$RUNNER_OS" == "Windows" ]]; then
-          powershell -Command "Expand-Archive -Path .github/sdk/Rack-SDK-2.4.1-win-x64.zip -DestinationPath ."
         elif [[ "$RUNNER_OS" == "macOS" ]]; then
           unzip .github/sdk/Rack-SDK-2.4.1-mac-x64.zip
           echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
         fi
-        echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
         echo "BUILD_FLAGS=-j$(nproc || sysctl -n hw.ncpu)" >> $GITHUB_ENV
       shell: bash
 
@@ -42,7 +39,6 @@ jobs:
       with:
         name: ${{ matrix.os }}-plugin
         path: |
-          plugin.dll
           plugin.dylib
           plugin.so
         if-no-files-found: ignore
