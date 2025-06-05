@@ -22,7 +22,7 @@ jobs:
       run: |
         if [[ "$RUNNER_OS" == "Linux" ]]; then
           unzip .github/sdk/Rack-SDK-2.4.1-lin-x64.zip
-          mv Rack-SDK-2.4.1 Rack-SDK
+          echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
         elif [[ "$RUNNER_OS" == "Windows" ]]; then
           powershell -Command "Expand-Archive -Path .github/sdk/Rack-SDK-2.4.1-win-x64.zip -DestinationPath .; Rename-Item Rack-SDK-2.4.1 Rack-SDK"
         elif [[ "$RUNNER_OS" == "macOS" ]]; then
