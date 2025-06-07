@@ -72,6 +72,44 @@ namespace DSPUtils {
         }
     };
 
+    struct CachedLowPass {
+        LowPassFilter filter;
+        float lastParam = 999.f;
+        float lastSampleRate = 0.f;
+
+        float process(float input, float filterParam, float sampleRate) {
+            if (filterParam < 0.f) {
+                if (filterParam != lastParam || sampleRate != lastSampleRate) {
+                    float cutoffFreq = std::pow(10.f, rescale(filterParam, -10.f, 0.f, std::log10(20.f), std::log10(20000.f)));
+                    filter.setCutoff(cutoffFreq, sampleRate);
+                    lastParam = filterParam;
+                    lastSampleRate = sampleRate;
+                }
+                return filter.process(input);
+            }
+            return input;
+        }
+    };
+
+    struct CachedHighPass {
+        HighPassFilter filter;
+        float lastParam = -999.f;
+        float lastSampleRate = 0.f;
+
+        float process(float input, float filterParam, float sampleRate) {
+            if (filterParam > 0.f) {
+                if (filterParam != lastParam || sampleRate != lastSampleRate) {
+                    float cutoffFreq = std::pow(10.f, rescale(filterParam, 0.f, 10.f, std::log10(20.f), std::log10(20000.f)));
+                    filter.setCutoff(cutoffFreq, sampleRate);
+                    lastParam = filterParam;
+                    lastSampleRate = sampleRate;
+                }
+                return filter.process(input);
+            }
+            return input;
+        }
+    };
+
 
 	inline float applyVolume(float signal, float volumeParam) {
 		float gain = clamp(volumeParam / 10.f, 0.f, 1.f);  // volumen normalizado [0..1]

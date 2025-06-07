@@ -125,9 +125,10 @@ struct TL_Drum5 : Module {
 	};
 
     Voice kick, clap, snare, closedHat, openHat;
+	DSPUtils::CachedLowPass kickLowFilter, clapLowFilter, snareLowFilter, closedHatLowFilter, openHatLowFilter;
+	DSPUtils::CachedHighPass kickHighFilter, clapHighFilter, snareHighFilter, closedHatHighFilter, openHatHighFilter;
 
-	DSPUtils::LowPassFilter kickLowFilter, clapLowFilter, snareLowFilter, closedHatLowFilter, openHatLowFilter;
-	DSPUtils::HighPassFilter kickHighFilter, clapHighFilter, snareHighFilter, closedHatHighFilter, openHatHighFilter;
+
 	DSPUtils::DecayEnvelope kickEnvelope, clapEnvelope, snareEnvelope, closedHatEnvelope, openHatEnvelope;
 
 // --------------------   Config module  -----------------------------------------
@@ -200,7 +201,7 @@ struct TL_Drum5 : Module {
 	// Process per channel.
 	std::tuple<float, float> processChannel(float trigger_in, float vol_in, float push_in, float filter_in, float decay_in, 
 										float link_in, dsp::SchmittTrigger& schmittTrig, Voice& voice, DSPUtils::DecayEnvelope& envelope,
-										float sampleRate, DSPUtils::LowPassFilter& lowFilter, DSPUtils::HighPassFilter& highFilter, 
+										float sampleRate, DSPUtils::CachedLowPass& lowFilter, DSPUtils::CachedHighPass& highFilter, 
 										float individual_out, float led_out, float pan_in, float mixLeft, float mixRight, 
 										const int16_t* sample_data, int sample_len) {		
 		// Get input values.
@@ -221,8 +222,8 @@ struct TL_Drum5 : Module {
 		sample *= envelope.process(); 
 		
 		sample = DSPUtils::applyBoost(sample, push);
-		sample = DSPUtils::applyLowPassFilter(sample, filter, sampleRate, lowFilter);
-		sample = DSPUtils::applyHighPassFilter(sample, filter, sampleRate, highFilter);
+		sample = lowFilter.process(sample, filter, sampleRate);
+		sample = highFilter.process(sample, filter, sampleRate);
 		sample = DSPUtils::applyVolume(sample, volume);		
 		
 		outputs[individual_out].setVoltage(sample * 5.f);
