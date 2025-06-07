@@ -8,7 +8,6 @@ void init(Plugin* p) {
 	pluginInstance = p;
 
 	// Add modules here
-	p->addModel(modelTL_tester);
 	p->addModel(modelTL_Drum5);
 
 	// Any other plugin initialization may go here.
