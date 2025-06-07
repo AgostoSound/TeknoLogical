@@ -78,29 +78,51 @@ struct TL_Drum5 : Module {
 // --------------------   Set initial values  ------------------------------------
     dsp::SchmittTrigger trigKick, trigClap, trigSnare, trigClosedHat, trigOpenHat;
 
+	// Represents a single voice that plays a short audio sample.
 	struct Voice {
-        const int16_t* sample = nullptr;
-        int length = 0;
-        int pos = 0;
-        bool playing = false;
+		const int16_t* sample = nullptr;  // Pointer to the audio sample data.
+		int length = 0;  // Length of the sample.
+		float pos = 0.f;  // Current playback position (floating point for interpolation).
+		
+		// How much to advance 'pos' each step (depends on sample rate).
+		float stepSize = 1.f;  // OriginalSample: 48000 kHz / currentSampleRateVCV.
+		bool playing = false;
 
-        float step() {
-            if (!playing || pos >= length)
-                return 0.f;
+		// Called on each audio frame to advance playback and get the next sample.
+		float step() {
+			if (!playing || pos >= length - 1)  // If not playing or reached the end of the sample, return silence.
+				return 0.f;
 
-            float out = (float)sample[pos++] / 32768.f;
-            if (pos >= length)
-                playing = false;
-            return out;
-        }
+			int i0 = (int)pos;  // Get the two nearest sample points for interpolation.
+			int i1 = i0 + 1;
 
-        void trigger(const int16_t* s, int len) {
-            sample = s;
-            length = len;
-            pos = 0;
-            playing = true;
-        }
-    };
+			if (i1 >= length)  // Clamp to avoid reading out of bounds.
+				i1 = length - 1;
+
+			float frac = pos - i0;  // Compute linear interpolation factor.
+			
+			// Convert int16 samples to float in range [-1.0, 1.0].
+			float s0 = (float)sample[i0] / 32768.f;
+			float s1 = (float)sample[i1] / 32768.f;
+
+			float out = s0 + (s1 - s0) * frac;  // Linear interpolation between s0 and s1.
+
+			pos += stepSize;  // Advance position.
+			if (pos >= length)  // If reached end, stop playing.
+				playing = false;
+
+			return out;
+		}
+
+		// Starts playback of a new sample.
+		void trigger(const int16_t* s, int len, float currentSampleRate) {
+			sample = s;  // Set sample buffer.
+			length = len;  // Set buffer length.
+			pos = 0.f;  // Reset position to start.
+			stepSize = 48000.f / currentSampleRate;  // Adjust for host sample rate.
+			playing = true;  // Enable playback.
+	}
+	};
 
     Voice kick, clap, snare, closedHat, openHat;
 
@@ -192,11 +214,12 @@ struct TL_Drum5 : Module {
 		
 		// Trigger plays samples.
         if (schmittTrig.process(trigger)) 
-		{voice.trigger(sample_data, sample_len); envelope.trigger(decay, sampleRate);}
+		{voice.trigger(sample_data, sample_len, sampleRate); envelope.trigger(decay, sampleRate);}
 
 		// Sample processors.
 		float sample = voice.step();
 		sample *= envelope.process(); 
+		
 		sample = DSPUtils::applyBoost(sample, push);
 		sample = DSPUtils::applyLowPassFilter(sample, filter, sampleRate, lowFilter);
 		sample = DSPUtils::applyHighPassFilter(sample, filter, sampleRate, highFilter);
@@ -218,33 +241,38 @@ struct TL_Drum5 : Module {
 
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
-		float sampleRate = args.sampleRate;
+		float sampleRate = args.sampleRate;  // Get sample rate from VCV.
 
-		// Variables para mezcla estéreo
+		// Stereo mix initial values.
 		float mixLeft = 0.f;
 		float mixRight = 0.f;
 
+		// Kick.
 		std::tie(mixLeft, mixRight) = processChannel(IN_KK_INPUT, VOL_KK_PARAM, PUSH_KK_PARAM, FILTER_KK_PARAM, DECAY_KK_PARAM, 
 			LINK_KK_PARAM, trigKick, kick, kickEnvelope, sampleRate, kickLowFilter, kickHighFilter, OUT_KK_OUTPUT, LED_KK_LIGHT, 
 			PAN_KK_PARAM, mixLeft, mixRight, kick_sample, kick_sample_len);
-
+			
+		// Snare.
 		std::tie(mixLeft, mixRight) = processChannel(IN_SN_INPUT, VOL_SN_PARAM, PUSH_SN_PARAM, FILTER_SN_PARAM, DECAY_SN_PARAM, 
 			LINK_SN_PARAM, trigSnare, snare, snareEnvelope, sampleRate, snareLowFilter, snareHighFilter, OUT_SN_OUTPUT, LED_SN_LIGHT, 
 			PAN_SN_PARAM, mixLeft, mixRight, snare_sample, snare_sample_len);
 
+		// Clap.
 		std::tie(mixLeft, mixRight) = processChannel(IN_CL_INPUT, VOL_CL_PARAM, PUSH_CL_PARAM, FILTER_CL_PARAM, DECAY_CL_PARAM, 
 			LINK_CL_PARAM, trigClap, clap, clapEnvelope, sampleRate, clapLowFilter, clapHighFilter, OUT_CL_OUTPUT, LED_CL_LIGHT, 
 			PAN_CL_PARAM, mixLeft, mixRight, clap_sample, clap_sample_len);
 
+		// Closed Hat.
 		std::tie(mixLeft, mixRight) = processChannel(IN_CH_INPUT, VOL_CH_PARAM, PUSH_CH_PARAM, FILTER_CH_PARAM, DECAY_CH_PARAM, 
 			LINK_CH_PARAM, trigClosedHat, closedHat, closedHatEnvelope, sampleRate, closedHatLowFilter, closedHatHighFilter, 
 			OUT_CH_OUTPUT, LED_CH_LIGHT, PAN_CH_PARAM, mixLeft, mixRight, closedhat_sample, closedhat_sample_len);
 
+		// Open Hat.
 		std::tie(mixLeft, mixRight) = processChannel(IN_OH_INPUT, VOL_OH_PARAM, PUSH_OH_PARAM, FILTER_OH_PARAM, DECAY_OH_PARAM, 
 			LINK_OH_PARAM, trigOpenHat, openHat, openHatEnvelope, sampleRate, openHatLowFilter, openHatHighFilter, OUT_OH_OUTPUT, 
 			LED_OH_LIGHT, PAN_OH_PARAM, mixLeft, mixRight, openhat_sample, openhat_sample_len);
 
-        // Salidas estéreo, escalado a ±5V
+        // Stereo Outs, rescaled to ±5V.
 		outputs[OUT_L_OUTPUT].setVoltage(mixLeft * 5.f);
 		outputs[OUT_R_OUTPUT].setVoltage(mixRight * 5.f);
 
