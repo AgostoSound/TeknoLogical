@@ -72,6 +72,32 @@ struct TL_Seq4 : Module {
 		LED_B14_LIGHT,
 		LED_B15_LIGHT,
 		LED_B16_LIGHT,
+		STEP_A1_LED,
+		STEP_A2_LED,
+		STEP_A3_LED,
+		STEP_A4_LED,
+		STEP_A5_LED,
+		STEP_A6_LED,
+		STEP_A7_LED,
+		STEP_A8_LED,
+		
+		STEP_B1_LED,
+		STEP_B2_LED,
+		STEP_B3_LED,
+		STEP_B4_LED,
+		STEP_B5_LED,
+		STEP_B6_LED,
+		STEP_B7_LED,
+		STEP_B8_LED,
+		STEP_B9_LED,
+		STEP_B10_LED,
+		STEP_B11_LED,
+		STEP_B12_LED,
+		STEP_B13_LED,
+		STEP_B14_LED,
+		STEP_B15_LED,
+		STEP_B16_LED,
+
 		LIGHTS_LEN
 	};
 	
@@ -144,14 +170,14 @@ struct TL_Seq4Widget : ModuleWidget {
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(22.535, 33.906)), module, TL_Seq4::RANDOM_1_PARAM));
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(68.936, 33.827)), module, TL_Seq4::REVERSE_1_PARAM));
 		// Steps.
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(17.159, 52.133)), module, TL_Seq4::STEP_A1_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(25.368, 51.069)), module, TL_Seq4::STEP_A2_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(33.518, 50.005)), module, TL_Seq4::STEP_A3_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(41.679, 48.988)), module, TL_Seq4::STEP_A4_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(49.906, 48.953)), module, TL_Seq4::STEP_A5_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(58.045, 50.028)), module, TL_Seq4::STEP_A6_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(66.218, 51.092)), module, TL_Seq4::STEP_A7_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(74.391, 52.121)), module, TL_Seq4::STEP_A8_PARAM));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(17.159, 52.133)), module, TL_Seq4::STEP_A1_PARAM, TL_Seq4::STEP_A1_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(25.368, 51.069)), module, TL_Seq4::STEP_A2_PARAM, TL_Seq4::STEP_A2_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(33.518, 50.005)), module, TL_Seq4::STEP_A3_PARAM, TL_Seq4::STEP_A3_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(41.679, 48.988)), module, TL_Seq4::STEP_A4_PARAM, TL_Seq4::STEP_A4_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(49.906, 48.953)), module, TL_Seq4::STEP_A5_PARAM, TL_Seq4::STEP_A5_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(58.045, 50.028)), module, TL_Seq4::STEP_A6_PARAM, TL_Seq4::STEP_A6_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(66.218, 51.092)), module, TL_Seq4::STEP_A7_PARAM, TL_Seq4::STEP_A7_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(74.391, 52.121)), module, TL_Seq4::STEP_A8_PARAM, TL_Seq4::STEP_A8_LED));
 		// Inputs.
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.371, 18.447)), module, TL_Seq4::IN_STEP_1_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.973, 34.265)), module, TL_Seq4::RANDOM_1_INPUT));
@@ -175,22 +201,23 @@ struct TL_Seq4Widget : ModuleWidget {
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(22.496, 84.135)), module, TL_Seq4::RANDOM_2_PARAM));
 		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(68.893, 84.16)), module, TL_Seq4::REVERSE_2_PARAM));
 		// Steps.
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(13.984, 104.521)), module, TL_Seq4::STEP_B1_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(23.251, 102.927)), module, TL_Seq4::STEP_B2_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(32.459, 101.863)), module, TL_Seq4::STEP_B3_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(41.15, 100.846)), module, TL_Seq4::STEP_B4_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(50.435, 100.811)), module, TL_Seq4::STEP_B5_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(59.103, 101.887)), module, TL_Seq4::STEP_B6_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(68.335, 102.951)), module, TL_Seq4::STEP_B7_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(77.566, 104.509)), module, TL_Seq4::STEP_B8_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(13.984, 114.046)), module, TL_Seq4::STEP_B9_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(23.251, 112.452)), module, TL_Seq4::STEP_B10_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(32.459, 111.388)), module, TL_Seq4::STEP_B11_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(41.15, 110.371)), module, TL_Seq4::STEP_B12_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(50.435, 110.336)), module, TL_Seq4::STEP_B13_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(59.103, 111.412)), module, TL_Seq4::STEP_B14_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(68.335, 112.476)), module, TL_Seq4::STEP_B15_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(77.566, 114.034)), module, TL_Seq4::STEP_B16_PARAM));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(13.984, 104.521)), module, TL_Seq4::STEP_B1_PARAM, TL_Seq4::STEP_B1_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(23.251, 102.927)), module, TL_Seq4::STEP_B2_PARAM, TL_Seq4::STEP_B2_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(32.459, 101.863)), module, TL_Seq4::STEP_B3_PARAM, TL_Seq4::STEP_B3_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(41.15, 100.846)), module, TL_Seq4::STEP_B4_PARAM, TL_Seq4::STEP_B4_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(50.435, 100.811)), module, TL_Seq4::STEP_B5_PARAM, TL_Seq4::STEP_B5_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(59.103, 101.887)), module, TL_Seq4::STEP_B6_PARAM, TL_Seq4::STEP_B6_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(68.335, 102.951)), module, TL_Seq4::STEP_B7_PARAM, TL_Seq4::STEP_B7_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(77.566, 104.509)), module, TL_Seq4::STEP_B8_PARAM, TL_Seq4::STEP_B8_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(13.984, 114.046)), module, TL_Seq4::STEP_B9_PARAM, TL_Seq4::STEP_B9_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(23.251, 112.452)), module, TL_Seq4::STEP_B10_PARAM, TL_Seq4::STEP_B10_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(32.459, 111.388)), module, TL_Seq4::STEP_B11_PARAM, TL_Seq4::STEP_B11_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(41.15, 110.371)), module, TL_Seq4::STEP_B12_PARAM, TL_Seq4::STEP_B12_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(50.435, 110.336)), module, TL_Seq4::STEP_B13_PARAM, TL_Seq4::STEP_B13_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(59.103, 111.412)), module, TL_Seq4::STEP_B14_PARAM, TL_Seq4::STEP_B14_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(68.335, 112.476)), module, TL_Seq4::STEP_B15_PARAM, TL_Seq4::STEP_B15_LED));
+		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<WhiteLight>>>(mm2px(Vec(77.566, 114.034)), module, TL_Seq4::STEP_B16_PARAM, TL_Seq4::STEP_B16_LED));
+
 		// Inputs.
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.412, 68.624)), module, TL_Seq4::IN_STEP_2_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.973, 84.537)), module, TL_Seq4::RANDOM_2_INPUT));
