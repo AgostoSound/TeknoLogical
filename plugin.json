@@ -26,7 +26,14 @@
       "tags": [
         "Drum"
       ]
+    },
+    {
+      "slug": "TL_Seq4",
+      "name": "TL_Seq4",
+      "description": "Double even-step sequencer.",
+      "tags": [
+        "Sequencer"
+      ]
     }
-
   ]
 }
