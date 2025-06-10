@@ -139,6 +139,20 @@ struct TL_Seq4 : Module {
 
 // --------------------   Set initial values  ------------------------------------
 
+	// Seq A.
+	bool latch_a1 = false, latch_a2 = false, latch_a3 = false, latch_a4 = false;
+	bool latch_a5 = false, latch_a6 = false, latch_a7 = false, latch_a8 = false;
+	bool length_a = false, reverse_a = false, input_a = false;
+	bool cv_len_a = false, cv_rev_a = false;
+
+	// Seq B.
+	bool latch_b1 = false, latch_b2 = false, latch_b3 = false, latch_b4 = false;
+	bool latch_b5 = false, latch_b6 = false, latch_b7 = false, latch_b8 = false;
+	bool latch_b9 = false, latch_b10 = false, latch_b11 = false, latch_b12 = false;
+	bool latch_b13 = false, latch_b14 = false, latch_b15 = false, latch_b16 = false;
+	bool length_b = false, reverse_b = false, input_b = false;
+	bool cv_len_b = false, cv_rev_b = false;
+
 // --------------------   Config module  -----------------------------------------
 	TL_Seq4() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -194,32 +208,73 @@ struct TL_Seq4 : Module {
 // --------------------   Functions  ---------------------------------------------
 
 	// Set steps leds.
-	bool setStepsLeds(Module* module) {		
-		// Arrays explícitos con los índices de los parámetros y LEDs correspondientes
-		const int stepParams[] = {
-			STEP_A1_PARAM, STEP_A2_PARAM, STEP_A3_PARAM, STEP_A4_PARAM, STEP_A5_PARAM, STEP_A6_PARAM, STEP_A7_PARAM, STEP_A8_PARAM,
-			STEP_B1_PARAM, STEP_B2_PARAM, STEP_B3_PARAM, STEP_B4_PARAM, STEP_B5_PARAM, STEP_B6_PARAM, STEP_B7_PARAM, STEP_B8_PARAM,
-			STEP_B9_PARAM, STEP_B10_PARAM, STEP_B11_PARAM, STEP_B12_PARAM, STEP_B13_PARAM, STEP_B14_PARAM, STEP_B15_PARAM, STEP_B16_PARAM
-		};
-
+	bool setStepsLeds(Module* module, const bool stepParams[], int numSteps) {		
 		const int stepLEDs[] = {
 			STEP_A1_LED, STEP_A2_LED, STEP_A3_LED, STEP_A4_LED, STEP_A5_LED, STEP_A6_LED, STEP_A7_LED, STEP_A8_LED,
 			STEP_B1_LED, STEP_B2_LED, STEP_B3_LED, STEP_B4_LED, STEP_B5_LED, STEP_B6_LED, STEP_B7_LED, STEP_B8_LED, 
 			STEP_B9_LED, STEP_B10_LED, STEP_B11_LED, STEP_B12_LED, STEP_B13_LED, STEP_B14_LED, STEP_B15_LED, STEP_B16_LED,
 		};
 
-		const int totalSteps = sizeof(stepParams) / sizeof(stepParams[0]);
-		for (int i = 0; i < totalSteps; ++i) {
-			bool isOn = module->params[stepParams[i]].getValue() == 1.0f;
-			module->lights[stepLEDs[i]].setBrightness(isOn ? 1.0f : 0.0f);
+		for (int i = 0; i < numSteps; ++i) {
+			module->lights[stepLEDs[i]].setBrightness(stepParams[i] ? 1.0f : 0.0f);
 		}
 
         return true;
     }
+	
+	// Read and update all inputs values.
+	void updateAllInputStates() {
+		// Seq A.
+		latch_a1  = params[STEP_A1_PARAM].getValue() == 1.0f;
+		latch_a2  = params[STEP_A2_PARAM].getValue() == 1.0f;
+		latch_a3  = params[STEP_A3_PARAM].getValue() == 1.0f;
+		latch_a4  = params[STEP_A4_PARAM].getValue() == 1.0f;
+		latch_a5  = params[STEP_A5_PARAM].getValue() == 1.0f;
+		latch_a6  = params[STEP_A6_PARAM].getValue() == 1.0f;
+		latch_a7  = params[STEP_A7_PARAM].getValue() == 1.0f;
+		latch_a8  = params[STEP_A8_PARAM].getValue() == 1.0f;
 
-// --------------------   Main cycle logic  --------------------------------------
+		length_a  = params[LENGTH_1_PARAM].getValue() == 1.0f;
+		reverse_a = params[REVERSE_1_PARAM].getValue() == 1.0f;
+		input_a   = inputs[IN_STEP_1_INPUT].getVoltage() >= 1.0f;
+		cv_len_a  = inputs[LENGTH_1_INPUT].getVoltage() >= 1.0f;
+		cv_rev_a  = inputs[REVERSE_1_INPUT].getVoltage() >= 1.0f;
+
+		// Seq B.
+		latch_b1  = params[STEP_B1_PARAM].getValue() == 1.0f;
+		latch_b2  = params[STEP_B2_PARAM].getValue() == 1.0f;
+		latch_b3  = params[STEP_B3_PARAM].getValue() == 1.0f;
+		latch_b4  = params[STEP_B4_PARAM].getValue() == 1.0f;
+		latch_b5  = params[STEP_B5_PARAM].getValue() == 1.0f;
+		latch_b6  = params[STEP_B6_PARAM].getValue() == 1.0f;
+		latch_b7  = params[STEP_B7_PARAM].getValue() == 1.0f;
+		latch_b8  = params[STEP_B8_PARAM].getValue() == 1.0f;
+		latch_b9  = params[STEP_B9_PARAM].getValue() == 1.0f;
+		latch_b10 = params[STEP_B10_PARAM].getValue() == 1.0f;
+		latch_b11 = params[STEP_B11_PARAM].getValue() == 1.0f;
+		latch_b12 = params[STEP_B12_PARAM].getValue() == 1.0f;
+		latch_b13 = params[STEP_B13_PARAM].getValue() == 1.0f;
+		latch_b14 = params[STEP_B14_PARAM].getValue() == 1.0f;
+		latch_b15 = params[STEP_B15_PARAM].getValue() == 1.0f;
+		latch_b16 = params[STEP_B16_PARAM].getValue() == 1.0f;
+
+		length_b  = params[LENGTH_2_PARAM].getValue() == 1.0f;
+		reverse_b = params[REVERSE_2_PARAM].getValue() == 1.0f;
+		input_b   = inputs[IN_STEP_2_INPUT].getVoltage() >= 1.0f;
+		cv_len_b  = inputs[LENGTH_2_INPUT].getVoltage() >= 1.0f;
+		cv_rev_b  = inputs[REVERSE_2_INPUT].getVoltage() >= 1.0f;
+	}
+
+	// --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
-		setStepsLeds(this);
+		updateAllInputStates();  // Update inputs values.
+		
+		const bool latchStates[] = {
+			latch_a1, latch_a2, latch_a3, latch_a4, latch_a5, latch_a6, latch_a7, latch_a8,
+			latch_b1, latch_b2, latch_b3, latch_b4, latch_b5, latch_b6, latch_b7, latch_b8,
+			latch_b9, latch_b10, latch_b11, latch_b12, latch_b13, latch_b14, latch_b15, latch_b16
+		};
+		setStepsLeds(this, latchStates, 24);  // Latch leds.
 	}
 };
 
