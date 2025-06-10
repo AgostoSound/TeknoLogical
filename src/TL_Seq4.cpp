@@ -5,6 +5,7 @@ struct TL_Seq4 : Module {
 	enum ParamId {
 		LENGTH_1_PARAM,
 		REVERSE_1_PARAM,
+
 		STEP_A1_PARAM,
 		STEP_A2_PARAM,
 		STEP_A3_PARAM,
@@ -13,8 +14,10 @@ struct TL_Seq4 : Module {
 		STEP_A6_PARAM,
 		STEP_A7_PARAM,
 		STEP_A8_PARAM,
+
 		LENGTH_2_PARAM,
 		REVERSE_2_PARAM,
+
 		STEP_B1_PARAM,
 		STEP_B2_PARAM,
 		STEP_B3_PARAM,
@@ -31,15 +34,18 @@ struct TL_Seq4 : Module {
 		STEP_B14_PARAM,
 		STEP_B15_PARAM,
 		STEP_B16_PARAM,
+
 		PARAMS_LEN
 	};
 	enum InputId {
 		IN_STEP_1_INPUT,
 		LENGTH_1_INPUT,
 		REVERSE_1_INPUT,
+
 		IN_STEP_2_INPUT,
 		LENGTH_2_INPUT,
 		REVERSE_2_INPUT,
+
 		INPUTS_LEN
 	};
 	enum OutputId {
@@ -56,6 +62,25 @@ struct TL_Seq4 : Module {
 		LED_A6_LIGHT,
 		LED_A7_LIGHT,
 		LED_A8_LIGHT,
+
+		STEP_A1_LED,
+		STEP_A2_LED,
+		STEP_A3_LED,
+		STEP_A4_LED,
+		STEP_A5_LED,
+		STEP_A6_LED,
+		STEP_A7_LED,
+		STEP_A8_LED,
+
+		MINILED_A1_LIGHT,
+		MINILED_A2_LIGHT,
+		MINILED_A3_LIGHT,
+		MINILED_A4_LIGHT,
+		MINILED_A5_LIGHT,
+		MINILED_A6_LIGHT,
+		MINILED_A7_LIGHT,
+		MINILED_A8_LIGHT,
+
 		LED_B1_LIGHT,
 		LED_B2_LIGHT,
 		LED_B3_LIGHT,
@@ -72,23 +97,6 @@ struct TL_Seq4 : Module {
 		LED_B14_LIGHT,
 		LED_B15_LIGHT,
 		LED_B16_LIGHT,
-
-		STEP_A1_LED,
-		STEP_A2_LED,
-		STEP_A3_LED,
-		STEP_A4_LED,
-		STEP_A5_LED,
-		STEP_A6_LED,
-		STEP_A7_LED,
-		STEP_A8_LED,
-		MINILED_A1_LIGHT,
-		MINILED_A2_LIGHT,
-		MINILED_A3_LIGHT,
-		MINILED_A4_LIGHT,
-		MINILED_A5_LIGHT,
-		MINILED_A6_LIGHT,
-		MINILED_A7_LIGHT,
-		MINILED_A8_LIGHT,
 		
 		STEP_B1_LED,
 		STEP_B2_LED,
@@ -106,6 +114,7 @@ struct TL_Seq4 : Module {
 		STEP_B14_LED,
 		STEP_B15_LED,
 		STEP_B16_LED,
+
 		MINILED_B1_LIGHT,
 		MINILED_B2_LIGHT,
 		MINILED_B3_LIGHT,
@@ -128,67 +137,56 @@ struct TL_Seq4 : Module {
 	
 	TL_Seq4() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
+		static const std::vector<std::string> on_off_labels = {"OFF", "ON"};
 		
 		// Sequencer A.
-		configParam(LENGTH_1_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(REVERSE_1_PARAM, 0.f, 1.f, 0.f, "");
-		configInput(IN_STEP_1_INPUT, "");
-		configInput(LENGTH_1_INPUT, "");
-		configInput(REVERSE_1_INPUT, "");
+		static const std::vector<std::string> steps_labels_a = {"4", "8"};
+		configSwitch(LENGTH_1_PARAM, 0.f, 1.f, 0.f, "Steps", steps_labels_a);
+		configSwitch(REVERSE_1_PARAM, 0.f, 1.f, 0.f, "Reverse", on_off_labels);
+		configInput(IN_STEP_1_INPUT, "Trigger A");
+		configInput(LENGTH_1_INPUT, "CV Steps");
+		configInput(REVERSE_1_INPUT, "CV Reverse");
 		
-		configParam(STEP_A1_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_A2_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_A3_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_A4_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_A5_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_A6_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_A7_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_A8_PARAM, 0.f, 1.f, 0.f, "");
+		configSwitch(STEP_A1_PARAM, 0.f, 1.f, 0.f, "1", on_off_labels);
+		configSwitch(STEP_A2_PARAM, 0.f, 1.f, 0.f, "2", on_off_labels);
+		configSwitch(STEP_A3_PARAM, 0.f, 1.f, 0.f, "3", on_off_labels);
+		configSwitch(STEP_A4_PARAM, 0.f, 1.f, 0.f, "4", on_off_labels);
+		configSwitch(STEP_A5_PARAM, 0.f, 1.f, 0.f, "5", on_off_labels);
+		configSwitch(STEP_A6_PARAM, 0.f, 1.f, 0.f, "6", on_off_labels);
+		configSwitch(STEP_A7_PARAM, 0.f, 1.f, 0.f, "7", on_off_labels);
+		configSwitch(STEP_A8_PARAM, 0.f, 1.f, 0.f, "8", on_off_labels);
 		
-		configOutput(OUT_1_OUTPUT, "");
-
+		configOutput(OUT_1_OUTPUT, "Seq A");
+		
 		// Sequencer B.
-		configParam(LENGTH_2_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(REVERSE_2_PARAM, 0.f, 1.f, 0.f, "");
-		configInput(IN_STEP_2_INPUT, "");
-		configInput(LENGTH_2_INPUT, "");
-		configInput(REVERSE_2_INPUT, "");
+		static const std::vector<std::string> steps_labels_b = {"8", "16"};
+		configSwitch(LENGTH_2_PARAM, 0.f, 1.f, 0.f, "Steps", steps_labels_b);
+		configSwitch(REVERSE_2_PARAM, 0.f, 1.f, 0.f, "Reverse", on_off_labels);
+		configInput(IN_STEP_2_INPUT, "Trigger B");
+		configInput(LENGTH_2_INPUT, "CV Steps");
+		configInput(REVERSE_2_INPUT, "CV Reverse");
 		
-		configParam(STEP_B1_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B2_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B3_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B4_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B5_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B6_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B7_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B8_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B9_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B10_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B11_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B12_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B13_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B14_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B15_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(STEP_B16_PARAM, 0.f, 1.f, 0.f, "");
+		configSwitch(STEP_B1_PARAM, 0.f, 1.f, 0.f, "1", on_off_labels);
+		configSwitch(STEP_B2_PARAM, 0.f, 1.f, 0.f, "2", on_off_labels);
+		configSwitch(STEP_B3_PARAM, 0.f, 1.f, 0.f, "3", on_off_labels);
+		configSwitch(STEP_B4_PARAM, 0.f, 1.f, 0.f, "4", on_off_labels);
+		configSwitch(STEP_B5_PARAM, 0.f, 1.f, 0.f, "5", on_off_labels);
+		configSwitch(STEP_B6_PARAM, 0.f, 1.f, 0.f, "6", on_off_labels);
+		configSwitch(STEP_B7_PARAM, 0.f, 1.f, 0.f, "7", on_off_labels);
+		configSwitch(STEP_B8_PARAM, 0.f, 1.f, 0.f, "8", on_off_labels);
+		configSwitch(STEP_B9_PARAM, 0.f, 1.f, 0.f, "9", on_off_labels);
+		configSwitch(STEP_B10_PARAM, 0.f, 1.f, 0.f, "10", on_off_labels);
+		configSwitch(STEP_B11_PARAM, 0.f, 1.f, 0.f, "11", on_off_labels);
+		configSwitch(STEP_B12_PARAM, 0.f, 1.f, 0.f, "12", on_off_labels);
+		configSwitch(STEP_B13_PARAM, 0.f, 1.f, 0.f, "13", on_off_labels);
+		configSwitch(STEP_B14_PARAM, 0.f, 1.f, 0.f, "14", on_off_labels);
+		configSwitch(STEP_B15_PARAM, 0.f, 1.f, 0.f, "15", on_off_labels);
+		configSwitch(STEP_B16_PARAM, 0.f, 1.f, 0.f, "16", on_off_labels);
 			
-		configOutput(OUT_2_OUTPUT, "");
+		configOutput(OUT_2_OUTPUT, "Seq B");
 	}
 
 	void process(const ProcessArgs& args) override {
-		lights[LED_A4_LIGHT].setBrightness(1.f);
-		
-		lights[LED_B4_LIGHT].setBrightness(1.f);
-
-		lights[STEP_A6_LED].setBrightness(1.f);
-		lights[STEP_A8_LED].setBrightness(1.f);
-		
-		lights[MINILED_A4_LIGHT].setBrightness(1.f);
-
-		lights[STEP_B7_LED].setBrightness(1.f);
-		lights[STEP_B13_LED].setBrightness(1.f);
-		lights[STEP_B16_LED].setBrightness(1.f);
-		
-		lights[MINILED_B4_LIGHT].setBrightness(1.f);
 	}
 };
 
