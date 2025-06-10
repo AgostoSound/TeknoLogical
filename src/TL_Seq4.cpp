@@ -1,7 +1,9 @@
 #include "plugin.hpp"
 
 
+// General structure.
 struct TL_Seq4 : Module {
+// --------------------   Visual components namespace  ---------------------------
 	enum ParamId {
 		LENGTH_1_PARAM,
 		REVERSE_1_PARAM,
@@ -134,7 +136,10 @@ struct TL_Seq4 : Module {
 
 		LIGHTS_LEN
 	};
-	
+
+// --------------------   Set initial values  ------------------------------------
+
+// --------------------   Config module  -----------------------------------------
 	TL_Seq4() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 		static const std::vector<std::string> on_off_labels = {"OFF", "ON"};
@@ -186,11 +191,40 @@ struct TL_Seq4 : Module {
 		configOutput(OUT_2_OUTPUT, "Seq B");
 	}
 
+// --------------------   Functions  ---------------------------------------------
+
+	// Set steps leds.
+	bool setStepsLeds(Module* module) {		
+		// Arrays explícitos con los índices de los parámetros y LEDs correspondientes
+		const int stepParams[] = {
+			STEP_A1_PARAM, STEP_A2_PARAM, STEP_A3_PARAM, STEP_A4_PARAM, STEP_A5_PARAM, STEP_A6_PARAM, STEP_A7_PARAM, STEP_A8_PARAM,
+			STEP_B1_PARAM, STEP_B2_PARAM, STEP_B3_PARAM, STEP_B4_PARAM, STEP_B5_PARAM, STEP_B6_PARAM, STEP_B7_PARAM, STEP_B8_PARAM,
+			STEP_B9_PARAM, STEP_B10_PARAM, STEP_B11_PARAM, STEP_B12_PARAM, STEP_B13_PARAM, STEP_B14_PARAM, STEP_B15_PARAM, STEP_B16_PARAM
+		};
+
+		const int stepLEDs[] = {
+			STEP_A1_LED, STEP_A2_LED, STEP_A3_LED, STEP_A4_LED, STEP_A5_LED, STEP_A6_LED, STEP_A7_LED, STEP_A8_LED,
+			STEP_B1_LED, STEP_B2_LED, STEP_B3_LED, STEP_B4_LED, STEP_B5_LED, STEP_B6_LED, STEP_B7_LED, STEP_B8_LED, 
+			STEP_B9_LED, STEP_B10_LED, STEP_B11_LED, STEP_B12_LED, STEP_B13_LED, STEP_B14_LED, STEP_B15_LED, STEP_B16_LED,
+		};
+
+		const int totalSteps = sizeof(stepParams) / sizeof(stepParams[0]);
+		for (int i = 0; i < totalSteps; ++i) {
+			bool isOn = module->params[stepParams[i]].getValue() == 1.0f;
+			module->lights[stepLEDs[i]].setBrightness(isOn ? 1.0f : 0.0f);
+		}
+
+        return true;
+    }
+
+// --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
+		setStepsLeds(this);
 	}
 };
 
 
+// --------------------   Visual components  -------------------------------------
 struct TL_Seq4Widget : ModuleWidget {
 	TL_Seq4Widget(TL_Seq4* module) {
 		setModule(module);
