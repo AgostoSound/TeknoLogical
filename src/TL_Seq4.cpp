@@ -216,7 +216,7 @@ struct TL_Seq4 : Module {
 
 // --------------------   Functions  ---------------------------------------------
 
-	// Set steps leds.
+	// Set step latchs leds.
 	void setStepsLeds(Module* module, const bool latch_a[], int len_a, const bool latch_b[], int len_b) {
 		const int stepLEDs[] = {
 			STEP_A1_LED, STEP_A2_LED, STEP_A3_LED, STEP_A4_LED, STEP_A5_LED, STEP_A6_LED, STEP_A7_LED, STEP_A8_LED,
@@ -271,6 +271,45 @@ struct TL_Seq4 : Module {
 		cv_rev_b  = inputs[REVERSE_2_INPUT].getVoltage() >= 1.0f;
 	}
 
+	// Update both step LED rings (A y B) en forma declarativa.
+	void updateLedRings(const int currentSteps[2]) {
+		const int ledLeds[2][16] = {
+			{
+				LED_A1_LIGHT, LED_A2_LIGHT, LED_A3_LIGHT, LED_A4_LIGHT,
+				LED_A5_LIGHT, LED_A6_LIGHT, LED_A7_LIGHT, LED_A8_LIGHT
+			},
+			{
+				LED_B1_LIGHT, LED_B2_LIGHT, LED_B3_LIGHT, LED_B4_LIGHT,
+				LED_B5_LIGHT, LED_B6_LIGHT, LED_B7_LIGHT, LED_B8_LIGHT,
+				LED_B9_LIGHT, LED_B10_LIGHT, LED_B11_LIGHT, LED_B12_LIGHT,
+				LED_B13_LIGHT, LED_B14_LIGHT, LED_B15_LIGHT, LED_B16_LIGHT
+			}
+		};
+
+		const int miniLeds[2][16] = {
+			{
+				MINILED_A1_LIGHT, MINILED_A2_LIGHT, MINILED_A3_LIGHT, MINILED_A4_LIGHT,
+				MINILED_A5_LIGHT, MINILED_A6_LIGHT, MINILED_A7_LIGHT, MINILED_A8_LIGHT
+			},
+			{
+				MINILED_B1_LIGHT, MINILED_B2_LIGHT, MINILED_B3_LIGHT, MINILED_B4_LIGHT,
+				MINILED_B5_LIGHT, MINILED_B6_LIGHT, MINILED_B7_LIGHT, MINILED_B8_LIGHT,
+				MINILED_B9_LIGHT, MINILED_B10_LIGHT, MINILED_B11_LIGHT, MINILED_B12_LIGHT,
+				MINILED_B13_LIGHT, MINILED_B14_LIGHT, MINILED_B15_LIGHT, MINILED_B16_LIGHT
+			}
+		};
+
+		const int totalSteps[2] = {8, 16};
+
+		for (int seq = 0; seq < 2; ++seq) {
+			for (int i = 0; i < totalSteps[seq]; ++i) {
+				bool active = (i == currentSteps[seq]);
+				lights[ledLeds[seq][i]].setBrightness(active ? 1.f : 0.f);
+				lights[miniLeds[seq][i]].setBrightness(active ? 1.f : 0.f);
+			}
+		}
+	}
+
 
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
@@ -291,6 +330,7 @@ struct TL_Seq4 : Module {
 		// Emitir el pulso si está activo.
 		float gateOutA = gatePulseA.process(args.sampleTime) ? 10.f : 0.f;
 		outputs[OUT_1_OUTPUT].setVoltage(gateOutA);
+
 		
 		// Seq B.
 		totalStepsB = length_b ? 16 : 8;
@@ -306,6 +346,9 @@ struct TL_Seq4 : Module {
 		// Emitir el pulso si está activo.
 		float gateOutB = gatePulseB.process(args.sampleTime) ? 10.f : 0.f;
 		outputs[OUT_2_OUTPUT].setVoltage(gateOutB);
+
+		int steps[2] = {currentStepA, currentStepB};
+		updateLedRings(steps);
 	}
 };
 
