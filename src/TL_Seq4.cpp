@@ -144,23 +144,32 @@ struct TL_Seq4 : Module {
 	bool latch_a[8];
 	bool length_a = false, reverse_a = false;
 	bool cv_len_a = false, cv_rev_a = false;
+	int currentStepA = 0;
+	dsp::SchmittTrigger clockTriggerA;
+	dsp::PulseGenerator gatePulseA;
+	bool reverseA = false;
+	bool reverse_a_state = false;  // Estado actual del switch de reversa
+	dsp::SchmittTrigger reverse_a_cv_trigger;  // Para detectar flancos en el input CV
+	bool manual_reverse_a = false;
 
+	
 	// Seq B.
 	bool input_b = false;
 	bool latch_b[16];
 	bool length_b = false, reverse_b = false;
 	bool cv_len_b = false, cv_rev_b = false;
-
-	int currentStepA = 0;
 	int currentStepB = 0;
-	dsp::SchmittTrigger clockTriggerA;
 	dsp::SchmittTrigger clockTriggerB;
-	dsp::PulseGenerator gatePulseA;
 	dsp::PulseGenerator gatePulseB;
+	bool reverseB = false;
+	bool reverse_b_state = false;  // Estado actual del switch de reversa
+	dsp::SchmittTrigger reverse_b_cv_trigger;  // Para detectar flancos en el input CV
+	bool manual_reverse_b = false;
+	
 	int totalStepsA, totalStepsB;
 	bool latchStates[24];
-
 	float gateOut;
+
 
 // --------------------   Config module  -----------------------------------------
 	TL_Seq4() {
@@ -247,10 +256,22 @@ struct TL_Seq4 : Module {
 		}
 
 		length_a  = params[LENGTH_1_PARAM].getValue() == 1.0f;
-		reverse_a = params[REVERSE_1_PARAM].getValue() == 1.0f;
 		input_a   = inputs[IN_STEP_1_INPUT].getVoltage() >= 1.0f;
 		cv_len_a  = inputs[LENGTH_1_INPUT].getVoltage() >= 1.0f;
+
+		reverse_a = params[REVERSE_1_PARAM].getValue() == 1.0f;
 		cv_rev_a  = inputs[REVERSE_1_INPUT].getVoltage() >= 1.0f;
+		bool manual_reverse_a = params[REVERSE_1_PARAM].getValue() == 1.0f;
+		if (reverse_a_state != manual_reverse_a) {
+			reverse_a_state = manual_reverse_a;
+		}
+		if (reverse_a_cv_trigger.process(inputs[REVERSE_1_INPUT].getVoltage())) {
+			reverse_a_state = !reverse_a_state;
+		}
+		
+		// Reflejar el estado actual en el switch visual (esto mueve el interruptor)
+		params[REVERSE_1_PARAM].setValue(reverse_a_state ? 1.0f : 0.0f);
+		reverseA = reverse_a_state;
 
 		// Seq B.
 		ParamId stepsParamsB[] = {
@@ -265,10 +286,22 @@ struct TL_Seq4 : Module {
 		}
 
 		length_b  = params[LENGTH_2_PARAM].getValue() == 1.0f;
-		reverse_b = params[REVERSE_2_PARAM].getValue() == 1.0f;
 		input_b   = inputs[IN_STEP_2_INPUT].getVoltage() >= 1.0f;
 		cv_len_b  = inputs[LENGTH_2_INPUT].getVoltage() >= 1.0f;
+
+
+		reverse_b = params[REVERSE_2_PARAM].getValue() == 1.0f;
 		cv_rev_b  = inputs[REVERSE_2_INPUT].getVoltage() >= 1.0f;
+		bool manual_reverse_b = params[REVERSE_2_PARAM].getValue() == 1.0f;
+		if (reverse_b_state != manual_reverse_b) {
+			reverse_b_state = manual_reverse_b;
+		}
+		if (reverse_b_cv_trigger.process(inputs[REVERSE_2_INPUT].getVoltage())) {
+			reverse_b_state = !reverse_b_state;
+		}
+		params[REVERSE_2_PARAM].setValue(reverse_b_state ? 1.0f : 0.0f);
+		reverseB = reverse_b_state;
+
 	}
 
 	// Update both step LED rings (A y B) en forma declarativa.
@@ -320,7 +353,11 @@ struct TL_Seq4 : Module {
 		totalStepsA = length_a ? 8 : 4;
 		
 		if (clockTriggerA.process(input_a)) {
-			currentStepA = (currentStepA + 1) % totalStepsA;
+			if (reverseA) {
+				currentStepA = (currentStepA - 1 + totalStepsA) % totalStepsA;
+			} else {
+				currentStepA = (currentStepA + 1) % totalStepsA;
+			}
 			
 			if (latch_a[currentStepA]) {
 				gatePulseA.trigger(1e-3f); // Pulso de 1 ms
@@ -336,7 +373,11 @@ struct TL_Seq4 : Module {
 		totalStepsB = length_b ? 16 : 8;
 		
 		if (clockTriggerB.process(input_b)) {
-			currentStepB = (currentStepB + 1) % totalStepsB;
+			if (reverseB) {
+				currentStepB = (currentStepB - 1 + totalStepsB) % totalStepsB;
+			} else {
+				currentStepB = (currentStepB + 1) % totalStepsB;
+			}
 			
 			if (latch_b[currentStepB]) {
 				gatePulseB.trigger(1e-3f); // Pulso de 1 ms
