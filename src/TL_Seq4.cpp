@@ -5,8 +5,9 @@
 struct TL_Seq4 : Module {
 // --------------------   Visual components namespace  ---------------------------
 	enum ParamId {
-		LENGTH_1_PARAM,
-		REVERSE_1_PARAM,
+		LENGTH_A_PARAM,
+		REVERSE_A_PARAM,
+		RESET_A_PARAM,
 
 		STEP_A1_PARAM,
 		STEP_A2_PARAM,
@@ -56,6 +57,10 @@ struct TL_Seq4 : Module {
 		OUTPUTS_LEN
 	};
 	enum LightId {
+		LENGTH_A_LED,
+		REVERSE_A_LED,
+		RESET_A_LED,
+
 		LED_A1_LIGHT,
 		LED_A2_LIGHT,
 		LED_A3_LIGHT,
@@ -82,6 +87,10 @@ struct TL_Seq4 : Module {
 		MINILED_A6_LIGHT,
 		MINILED_A7_LIGHT,
 		MINILED_A8_LIGHT,
+
+		LENGTH_B_LED,
+		REVERSE_B_LED,
+		RESET_B_LED,
 
 		LED_B1_LIGHT,
 		LED_B2_LIGHT,
@@ -144,6 +153,7 @@ struct TL_Seq4 : Module {
 	bool latch_a[8];
 	bool length_a = false, reverse_a = false;
 	bool cv_len_a = false, cv_rev_a = false;
+	bool reset_a = false;
 	int currentStepA = 0;
 	dsp::SchmittTrigger clockTriggerA;
 	dsp::PulseGenerator gatePulseA;
@@ -157,7 +167,8 @@ struct TL_Seq4 : Module {
 	bool input_b = false;
 	bool latch_b[16];
 	bool length_b = false, reverse_b = false;
-	bool cv_len_b = false, cv_rev_b = false;
+	bool cv_len_b = false, cv_rev_b = false;	
+	bool reset_b = false;
 	int currentStepB = 0;
 	dsp::SchmittTrigger clockTriggerB;
 	dsp::PulseGenerator gatePulseB;
@@ -178,8 +189,8 @@ struct TL_Seq4 : Module {
 		
 		// Sequencer A.
 		static const std::vector<std::string> steps_labels_a = {"4", "8"};
-		configSwitch(LENGTH_1_PARAM, 0.f, 1.f, 0.f, "Steps", steps_labels_a);
-		configSwitch(REVERSE_1_PARAM, 0.f, 1.f, 0.f, "Reverse", on_off_labels);
+		configSwitch(LENGTH_A_PARAM, 0.f, 1.f, 0.f, "Steps", steps_labels_a);
+		configSwitch(REVERSE_A_PARAM, 0.f, 1.f, 0.f, "Reverse", on_off_labels);
 		configInput(IN_STEP_1_INPUT, "Trigger A");
 		configInput(LENGTH_1_INPUT, "CV Steps");
 		configInput(REVERSE_1_INPUT, "CV Reverse");
@@ -226,7 +237,8 @@ struct TL_Seq4 : Module {
 // --------------------   Functions  ---------------------------------------------
 
 	// Set step latchs leds.
-	void setStepsLeds(Module* module, const bool latch_a[], int len_a, const bool latch_b[], int len_b) {
+	void setStepsLeds(Module* module, const bool latch_a[], int len_a, const bool latch_b[], int len_b, 
+		bool length_a, bool reverse_a, bool reset_a, bool length_b, bool reverse_b, bool reset_b) {
 		const int stepLEDs[] = {
 			STEP_A1_LED, STEP_A2_LED, STEP_A3_LED, STEP_A4_LED, STEP_A5_LED, STEP_A6_LED, STEP_A7_LED, STEP_A8_LED,
 			STEP_B1_LED, STEP_B2_LED, STEP_B3_LED, STEP_B4_LED, STEP_B5_LED, STEP_B6_LED, STEP_B7_LED, STEP_B8_LED,
@@ -241,6 +253,16 @@ struct TL_Seq4 : Module {
 		for (int i = 0; i < len_b; ++i) {
 			module->lights[stepLEDs[len_a + i]].setBrightness(latch_b[i] ? 1.0f : 0.0f);
 		}
+
+		// LEDs de botones extra (uno por función por secuenciador)
+		module->lights[LENGTH_A_LED].setBrightness(length_a ? 1.0f : 0.0f);
+		module->lights[REVERSE_A_LED].setBrightness(reverse_a ? 1.0f : 0.0f);
+		module->lights[RESET_A_LED].setBrightness(reset_a ? 1.0f : 0.0f);
+
+		module->lights[LENGTH_B_LED].setBrightness(length_b ? 1.0f : 0.0f);
+		module->lights[REVERSE_B_LED].setBrightness(reverse_b ? 1.0f : 0.0f);
+		module->lights[RESET_B_LED].setBrightness(reset_b ? 1.0f : 0.0f);
+
 	}
 	
 	// Read and update all inputs values.
@@ -255,13 +277,13 @@ struct TL_Seq4 : Module {
 			latch_a[i] = params[stepsParamsA[i]].getValue() == 1.0f;
 		}
 
-		length_a  = params[LENGTH_1_PARAM].getValue() == 1.0f;
+		length_a  = params[LENGTH_A_PARAM].getValue() == 1.0f;
 		input_a   = inputs[IN_STEP_1_INPUT].getVoltage() >= 1.0f;
 		cv_len_a  = inputs[LENGTH_1_INPUT].getVoltage() >= 1.0f;
 
-		reverse_a = params[REVERSE_1_PARAM].getValue() == 1.0f;
+		reverse_a = params[REVERSE_A_PARAM].getValue() == 1.0f;
 		cv_rev_a  = inputs[REVERSE_1_INPUT].getVoltage() >= 1.0f;
-		bool manual_reverse_a = params[REVERSE_1_PARAM].getValue() == 1.0f;
+		bool manual_reverse_a = params[REVERSE_A_PARAM].getValue() == 1.0f;
 		if (reverse_a_state != manual_reverse_a) {
 			reverse_a_state = manual_reverse_a;
 		}
@@ -270,7 +292,7 @@ struct TL_Seq4 : Module {
 		}
 		
 		// Reflejar el estado actual en el switch visual (esto mueve el interruptor)
-		params[REVERSE_1_PARAM].setValue(reverse_a_state ? 1.0f : 0.0f);
+		params[REVERSE_A_PARAM].setValue(reverse_a_state ? 1.0f : 0.0f);
 		reverseA = reverse_a_state;
 
 		// Seq B.
@@ -347,7 +369,7 @@ struct TL_Seq4 : Module {
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
 		updateAllInputStates();  // Update inputs values.
-		setStepsLeds(this, latch_a, 8, latch_b, 16);  // Set Latch steps LEDs.
+		setStepsLeds(this, latch_a, 8, latch_b, 16, length_a, reverseA, reset_a, length_b, reverseB, reset_a);  // Set Latch steps LEDs.
 
 		// Seq A.
 		totalStepsA = length_a ? 8 : 4;
@@ -408,17 +430,19 @@ struct TL_Seq4Widget : ModuleWidget {
 		// Sequencer A.
 
 		// Params.
-		addParam(createParamCentered<NKK>(mm2px(Vec(22.535, 33.906)), module, TL_Seq4::LENGTH_1_PARAM));
-		addParam(createParamCentered<NKK>(mm2px(Vec(68.936, 33.827)), module, TL_Seq4::REVERSE_1_PARAM));
+		addParam(createLightParamCentered<VCVLightLatch<LargeSimpleLight<WhiteLight>>>(mm2px(Vec(22.535, 33.906)), module, TL_Seq4::LENGTH_A_PARAM, TL_Seq4::LENGTH_A_LED));
+		addParam(createLightParamCentered<VCVLightLatch<LargeSimpleLight<WhiteLight>>>(mm2px(Vec(68.936, 33.827)), module, TL_Seq4::REVERSE_A_PARAM, TL_Seq4::REVERSE_A_LED));
+		addParam(createLightParamCentered<VCVLightButton<LargeSimpleLight<WhiteLight>>>(mm2px(Vec(8.159, 60.133)), module, TL_Seq4::RESET_A_PARAM, TL_Seq4::RESET_A_LED));
+		
 		// Steps.
-		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(17.159, 52.133)), module, TL_Seq4::STEP_A1_PARAM, TL_Seq4::STEP_A1_LED));
-		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(25.368, 51.069)), module, TL_Seq4::STEP_A2_PARAM, TL_Seq4::STEP_A2_LED));
-		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(33.518, 50.005)), module, TL_Seq4::STEP_A3_PARAM, TL_Seq4::STEP_A3_LED));
-		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(41.679, 48.988)), module, TL_Seq4::STEP_A4_PARAM, TL_Seq4::STEP_A4_LED));
-		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(49.906, 48.953)), module, TL_Seq4::STEP_A5_PARAM, TL_Seq4::STEP_A5_LED));
-		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(58.045, 50.028)), module, TL_Seq4::STEP_A6_PARAM, TL_Seq4::STEP_A6_LED));
-		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(66.218, 51.092)), module, TL_Seq4::STEP_A7_PARAM, TL_Seq4::STEP_A7_LED));
-		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(74.391, 52.121)), module, TL_Seq4::STEP_A8_PARAM, TL_Seq4::STEP_A8_LED));
+		addParam(createLightParamCentered<VCVLightLatch<SmallSimpleLight<BlueLight>>>(mm2px(Vec(17.159, 52.133)), module, TL_Seq4::STEP_A1_PARAM, TL_Seq4::STEP_A1_LED));
+		addParam(createLightParamCentered<VCVLightLatch<SmallSimpleLight<BlueLight>>>(mm2px(Vec(25.368, 51.069)), module, TL_Seq4::STEP_A2_PARAM, TL_Seq4::STEP_A2_LED));
+		addParam(createLightParamCentered<VCVLightLatch<SmallSimpleLight<BlueLight>>>(mm2px(Vec(33.518, 50.005)), module, TL_Seq4::STEP_A3_PARAM, TL_Seq4::STEP_A3_LED));
+		addParam(createLightParamCentered<VCVLightLatch<SmallSimpleLight<BlueLight>>>(mm2px(Vec(41.679, 48.988)), module, TL_Seq4::STEP_A4_PARAM, TL_Seq4::STEP_A4_LED));
+		addParam(createLightParamCentered<VCVLightLatch<SmallSimpleLight<BlueLight>>>(mm2px(Vec(49.906, 48.953)), module, TL_Seq4::STEP_A5_PARAM, TL_Seq4::STEP_A5_LED));
+		addParam(createLightParamCentered<VCVLightLatch<SmallSimpleLight<BlueLight>>>(mm2px(Vec(58.045, 50.028)), module, TL_Seq4::STEP_A6_PARAM, TL_Seq4::STEP_A6_LED));
+		addParam(createLightParamCentered<VCVLightLatch<SmallSimpleLight<BlueLight>>>(mm2px(Vec(66.218, 51.092)), module, TL_Seq4::STEP_A7_PARAM, TL_Seq4::STEP_A7_LED));
+		addParam(createLightParamCentered<VCVLightLatch<SmallSimpleLight<BlueLight>>>(mm2px(Vec(74.391, 52.121)), module, TL_Seq4::STEP_A8_PARAM, TL_Seq4::STEP_A8_LED));
 		// Inputs.
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.371, 18.447)), module, TL_Seq4::IN_STEP_1_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(7.973, 34.265)), module, TL_Seq4::LENGTH_1_INPUT));

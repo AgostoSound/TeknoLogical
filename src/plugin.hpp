@@ -11,4 +11,5 @@ extern Plugin* pluginInstance;
 extern Model* modelTL_tester;
 extern Model* modelTL_Drum5;
 extern Model* modelTL_Seq4;
+extern Model* modelTL_Reseter;
 

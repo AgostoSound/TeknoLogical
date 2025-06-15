@@ -34,6 +34,17 @@
       "tags": [
         "Sequencer"
       ]
+    },
+    {
+      "slug": "TL_Reseter",
+      "name": "TL_Reseter",
+      "description": "Extension to reset sequenced modules.",
+      "tags": [
+        "Sequencer",
+        "Utility",
+        "Controller"
+      ]
     }
+
   ]
 }
