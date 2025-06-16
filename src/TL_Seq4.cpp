@@ -5,8 +5,8 @@
 struct TL_Seq4 : Module {
 // --------------------   Visual components namespace  ---------------------------
 	enum ParamId {
-		LENGTH_A_PARAM,
-		REVERSE_A_PARAM,
+		LENGTH_1_PARAM,
+		REVERSE_1_PARAM,
 
 		STEP_A1_PARAM,
 		STEP_A2_PARAM,
@@ -56,9 +56,6 @@ struct TL_Seq4 : Module {
 		OUTPUTS_LEN
 	};
 	enum LightId {
-		LENGTH_A_LED,
-		REVERSE_A_LED,
-
 		LED_A1_LIGHT,
 		LED_A2_LIGHT,
 		LED_A3_LIGHT,
@@ -85,9 +82,6 @@ struct TL_Seq4 : Module {
 		MINILED_A6_LIGHT,
 		MINILED_A7_LIGHT,
 		MINILED_A8_LIGHT,
-
-		LENGTH_B_LED,
-		REVERSE_B_LED,
 
 		LED_B1_LIGHT,
 		LED_B2_LIGHT,
@@ -150,29 +144,33 @@ struct TL_Seq4 : Module {
 	bool latch_a[8];
 	bool length_a = false, reverse_a = false;
 	bool cv_len_a = false, cv_rev_a = false;
-	bool reset_a = false;
 	int currentStepA = 0;
 	dsp::SchmittTrigger clockTriggerA;
 	dsp::PulseGenerator gatePulseA;
-	bool reverseA = false;
+	bool reverseA = false, lengthA = false;
 	bool reverse_a_state = false;  // Estado actual del switch de reversa
 	dsp::SchmittTrigger reverse_a_cv_trigger;  // Para detectar flancos en el input CV
 	bool manual_reverse_a = false;
+	bool length_a_state = false;  // Estado actual del switch de duracion
+	dsp::SchmittTrigger length_a_cv_trigger;  // Para detectar flancos en el input CV
+	bool manual_length_a = false;
 
 	
 	// Seq B.
 	bool input_b = false;
 	bool latch_b[16];
 	bool length_b = false, reverse_b = false;
-	bool cv_len_b = false, cv_rev_b = false;	
-	bool reset_b = false;
+	bool cv_len_b = false, cv_rev_b = false;
 	int currentStepB = 0;
 	dsp::SchmittTrigger clockTriggerB;
 	dsp::PulseGenerator gatePulseB;
-	bool reverseB = false;
+	bool reverseB = false, lengthB = false;
 	bool reverse_b_state = false;  // Estado actual del switch de reversa
 	dsp::SchmittTrigger reverse_b_cv_trigger;  // Para detectar flancos en el input CV
 	bool manual_reverse_b = false;
+	bool length_b_state = false;  // Estado actual del switch de duracion
+	dsp::SchmittTrigger length_b_cv_trigger;  // Para detectar flancos en el input CV
+	bool manual_length_b = false;
 	
 	int totalStepsA, totalStepsB;
 	bool latchStates[24];
@@ -186,8 +184,8 @@ struct TL_Seq4 : Module {
 		
 		// Sequencer A.
 		static const std::vector<std::string> steps_labels_a = {"4", "8"};
-		configSwitch(LENGTH_A_PARAM, 0.f, 1.f, 0.f, "Steps", steps_labels_a);
-		configSwitch(REVERSE_A_PARAM, 0.f, 1.f, 0.f, "Reverse", on_off_labels);
+		configSwitch(LENGTH_1_PARAM, 0.f, 1.f, 0.f, "Steps", steps_labels_a);
+		configSwitch(REVERSE_1_PARAM, 0.f, 1.f, 0.f, "Reverse", on_off_labels);
 		configInput(IN_STEP_1_INPUT, "Trigger A");
 		configInput(LENGTH_1_INPUT, "CV Steps");
 		configInput(REVERSE_1_INPUT, "CV Reverse");
@@ -249,7 +247,6 @@ struct TL_Seq4 : Module {
 		for (int i = 0; i < len_b; ++i) {
 			module->lights[stepLEDs[len_a + i]].setBrightness(latch_b[i] ? 1.0f : 0.0f);
 		}
-
 	}
 	
 	// Read and update all inputs values.
@@ -264,22 +261,33 @@ struct TL_Seq4 : Module {
 			latch_a[i] = params[stepsParamsA[i]].getValue() == 1.0f;
 		}
 
-		length_a  = params[LENGTH_A_PARAM].getValue() == 1.0f;
 		input_a   = inputs[IN_STEP_1_INPUT].getVoltage() >= 1.0f;
+		
+		length_a  = params[LENGTH_1_PARAM].getValue() == 1.0f;
 		cv_len_a  = inputs[LENGTH_1_INPUT].getVoltage() >= 1.0f;
+		if (length_a_state != length_a) {
+			length_a_state = length_a;
+		}
+		if (length_a_cv_trigger.process(inputs[LENGTH_1_INPUT].getVoltage())) {
+			length_a_state = !length_a_state;
+		}
+		
+		// Reflejar el estado actual en el switch visual (esto mueve el interruptor)
+		params[LENGTH_1_PARAM].setValue(length_a_state ? 1.0f : 0.0f);
+		lengthA = length_a_state;
 
-		reverse_a = params[REVERSE_A_PARAM].getValue() == 1.0f;
+
+		reverse_a = params[REVERSE_1_PARAM].getValue() == 1.0f;
 		cv_rev_a  = inputs[REVERSE_1_INPUT].getVoltage() >= 1.0f;
-		bool manual_reverse_a = params[REVERSE_A_PARAM].getValue() == 1.0f;
-		if (reverse_a_state != manual_reverse_a) {
-			reverse_a_state = manual_reverse_a;
+		if (reverse_a_state != reverse_a) {
+			reverse_a_state = reverse_a;
 		}
 		if (reverse_a_cv_trigger.process(inputs[REVERSE_1_INPUT].getVoltage())) {
 			reverse_a_state = !reverse_a_state;
 		}
 		
 		// Reflejar el estado actual en el switch visual (esto mueve el interruptor)
-		params[REVERSE_A_PARAM].setValue(reverse_a_state ? 1.0f : 0.0f);
+		params[REVERSE_1_PARAM].setValue(reverse_a_state ? 1.0f : 0.0f);
 		reverseA = reverse_a_state;
 
 		// Seq B.
@@ -294,16 +302,25 @@ struct TL_Seq4 : Module {
 			latch_b[i] = params[stepsParamsB[i]].getValue() == 1.0f;
 		}
 
-		length_b  = params[LENGTH_2_PARAM].getValue() == 1.0f;
 		input_b   = inputs[IN_STEP_2_INPUT].getVoltage() >= 1.0f;
-		cv_len_b  = inputs[LENGTH_2_INPUT].getVoltage() >= 1.0f;
 
+		length_b  = params[LENGTH_2_PARAM].getValue() == 1.0f;
+		cv_len_b  = inputs[LENGTH_2_INPUT].getVoltage() >= 1.0f;
+		if (length_b_state != length_b) {
+			length_b_state = length_b;
+		}
+		if (length_b_cv_trigger.process(inputs[LENGTH_2_INPUT].getVoltage())) {
+			length_b_state = !length_b_state;
+		}
+		
+		// Reflejar el estado actual en el switch visual (esto mueve el interruptor)
+		params[LENGTH_2_PARAM].setValue(length_b_state ? 1.0f : 0.0f);
+		lengthB = length_b_state;
 
 		reverse_b = params[REVERSE_2_PARAM].getValue() == 1.0f;
 		cv_rev_b  = inputs[REVERSE_2_INPUT].getVoltage() >= 1.0f;
-		bool manual_reverse_b = params[REVERSE_2_PARAM].getValue() == 1.0f;
-		if (reverse_b_state != manual_reverse_b) {
-			reverse_b_state = manual_reverse_b;
+		if (reverse_b_state != reverse_b) {
+			reverse_b_state = reverse_b;
 		}
 		if (reverse_b_cv_trigger.process(inputs[REVERSE_2_INPUT].getVoltage())) {
 			reverse_b_state = !reverse_b_state;
@@ -417,9 +434,8 @@ struct TL_Seq4Widget : ModuleWidget {
 		// Sequencer A.
 
 		// Params.
-		addParam(createLightParamCentered<VCVLightLatch<LargeSimpleLight<WhiteLight>>>(mm2px(Vec(22.535, 33.906)), module, TL_Seq4::LENGTH_A_PARAM, TL_Seq4::LENGTH_A_LED));
-		addParam(createLightParamCentered<VCVLightLatch<LargeSimpleLight<WhiteLight>>>(mm2px(Vec(68.936, 33.827)), module, TL_Seq4::REVERSE_A_PARAM, TL_Seq4::REVERSE_A_LED));
-		
+		addParam(createParamCentered<NKK>(mm2px(Vec(22.535, 33.906)), module, TL_Seq4::LENGTH_1_PARAM));
+		addParam(createParamCentered<NKK>(mm2px(Vec(68.936, 33.827)), module, TL_Seq4::REVERSE_1_PARAM));
 		// Steps.
 		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(17.159, 52.133)), module, TL_Seq4::STEP_A1_PARAM, TL_Seq4::STEP_A1_LED));
 		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(25.368, 51.069)), module, TL_Seq4::STEP_A2_PARAM, TL_Seq4::STEP_A2_LED));
