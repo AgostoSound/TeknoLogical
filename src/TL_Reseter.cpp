@@ -2,7 +2,9 @@
 #include "widgets/switches.hpp"
 
 
+// General structure.
 struct TL_Reseter : Module {
+// --------------------   Visual components namespace  ---------------------------
 	enum ParamId {
 		PUSH_A_PARAM,
 		SIDE_A_PARAM,
@@ -24,21 +26,50 @@ struct TL_Reseter : Module {
 		LIGHTS_LEN
 	};
 
+// --------------------   Set initial values  ------------------------------------
+    float aLightIntensity = 0.f;
+    float bLightIntensity = 0.f;
+
+// --------------------   Config module  -----------------------------------------
 	TL_Reseter() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(PUSH_A_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(SIDE_A_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PUSH_B_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(SIDE_B_PARAM, 0.f, 1.f, 0.f, "");
-		configInput(IN_A_INPUT, "");
-		configInput(IN_B_INPUT, "");
+		configButton(PUSH_A_PARAM, "Push A");
+		configButton(PUSH_B_PARAM, "Push B");
+		configSwitch(SIDE_A_PARAM, 0.f, 1.f, 0.f, "Side A", {"Left", "Right"});
+		configSwitch(SIDE_B_PARAM, 0.f, 1.f, 0.f, "Side B", {"Left", "Right"});
+		configInput(IN_A_INPUT, "Gate A");
+		configInput(IN_B_INPUT, "Gate B");
 	}
 
+// --------------------   Functions  ---------------------------------------------
+
+
+// --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
-	}
+        float deltaTime = args.sampleTime;
+
+        // Lecturas de gate
+        bool aPressed = (params[PUSH_A_PARAM].getValue() > 0.f) 
+                        || (inputs[IN_A_INPUT].isConnected() && std::fabs(inputs[IN_A_INPUT].getVoltage()) > 1.f);
+        bool bPressed = (params[PUSH_B_PARAM].getValue() > 0.f) 
+                        || (inputs[IN_B_INPUT].isConnected() && std::fabs(inputs[IN_B_INPUT].getVoltage()) > 1.f);
+
+        // Aumenta intensidad al presionar o recibir gate
+        aLightIntensity += (aPressed ? (1.f - aLightIntensity) : -5.f * deltaTime);
+        bLightIntensity += (bPressed ? (1.f - bLightIntensity) : -5.f * deltaTime);
+
+        // Limita intensidades
+        aLightIntensity = clamp(aLightIntensity, 0.f, 1.f);
+        bLightIntensity = clamp(bLightIntensity, 0.f, 1.f);
+
+        // Asigna intensidades
+        lights[PUSH_A_LED].setBrightness(aLightIntensity);
+        lights[PUSH_B_LED].setBrightness(bLightIntensity);
+    }
 };
 
 
+// --------------------   Visual components  -------------------------------------
 struct TL_ReseterWidget : ModuleWidget {
 	TL_ReseterWidget(TL_Reseter* module) {
 		setModule(module);
