@@ -30,6 +30,9 @@ struct TL_Reseter : Module {
     float aLightIntensity = 0.f;
     float bLightIntensity = 0.f;
 
+    bool aPressed = false;
+    bool bPressed = false;
+
 // --------------------   Config module  -----------------------------------------
 	TL_Reseter() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -43,18 +46,14 @@ struct TL_Reseter : Module {
 
 // --------------------   Functions  ---------------------------------------------
 
+    void updateLightsAndTriggers(float deltaTime) {
+        // Leer entradas + botones
+        aPressed = (params[PUSH_A_PARAM].getValue() > 0.f) 
+                || (inputs[IN_A_INPUT].isConnected() && std::fabs(inputs[IN_A_INPUT].getVoltage()) > 1.f);
+        bPressed = (params[PUSH_B_PARAM].getValue() > 0.f) 
+                || (inputs[IN_B_INPUT].isConnected() && std::fabs(inputs[IN_B_INPUT].getVoltage()) > 1.f);
 
-// --------------------   Main cycle logic  --------------------------------------
-	void process(const ProcessArgs& args) override {
-        float deltaTime = args.sampleTime;
-
-        // Lecturas de gate
-        bool aPressed = (params[PUSH_A_PARAM].getValue() > 0.f) 
-                        || (inputs[IN_A_INPUT].isConnected() && std::fabs(inputs[IN_A_INPUT].getVoltage()) > 1.f);
-        bool bPressed = (params[PUSH_B_PARAM].getValue() > 0.f) 
-                        || (inputs[IN_B_INPUT].isConnected() && std::fabs(inputs[IN_B_INPUT].getVoltage()) > 1.f);
-
-        // Aumenta intensidad al presionar o recibir gate
+        // Aumenta intensidades
         aLightIntensity += (aPressed ? (1.f - aLightIntensity) : -5.f * deltaTime);
         bLightIntensity += (bPressed ? (1.f - bLightIntensity) : -5.f * deltaTime);
 
@@ -62,9 +61,15 @@ struct TL_Reseter : Module {
         aLightIntensity = clamp(aLightIntensity, 0.f, 1.f);
         bLightIntensity = clamp(bLightIntensity, 0.f, 1.f);
 
-        // Asigna intensidades
+        // Asigna intensidades a LEDs
         lights[PUSH_A_LED].setBrightness(aLightIntensity);
         lights[PUSH_B_LED].setBrightness(bLightIntensity);
+    }
+
+
+// --------------------   Main cycle logic  --------------------------------------
+	void process(const ProcessArgs& args) override {
+        updateLightsAndTriggers(args.sampleTime);
     }
 };
 
