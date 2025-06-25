@@ -254,10 +254,10 @@ struct TL_Seq4 : Module {
 		}
 
 		if (inputs[LENGTH_1_INPUT].isConnected()) {
-        	length_a = inputs[LENGTH_1_INPUT].getVoltage() >= 1.0f;
-    	} else {
-        	length_a = params[LENGTH_1_PARAM].getValue() == 1.0f;
-    	}
+			length_a = inputs[LENGTH_1_INPUT].getVoltage() >= 1.0f;
+		} else {
+			length_a = params[LENGTH_1_PARAM].getValue() == 1.0f;
+		}
 		input_a   = inputs[IN_STEP_1_INPUT].getVoltage() >= 1.0f;
 
 		reverse_a = params[REVERSE_1_PARAM].getValue() == 1.0f;
