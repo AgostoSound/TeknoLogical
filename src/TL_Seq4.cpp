@@ -143,7 +143,6 @@ struct TL_Seq4 : Module {
 	bool input_a = false;
 	bool latch_a[8];
 	bool length_a = false, reverse_a = false;
-	bool cv_len_a = false, cv_rev_a = false;
 	int currentStepA = 0;
 	dsp::SchmittTrigger clockTriggerA;
 	dsp::PulseGenerator gatePulseA;
@@ -157,7 +156,6 @@ struct TL_Seq4 : Module {
 	bool input_b = false;
 	bool latch_b[16];
 	bool length_b = false, reverse_b = false;
-	bool cv_len_b = false, cv_rev_b = false;
 	int currentStepB = 0;
 	dsp::SchmittTrigger clockTriggerB;
 	dsp::PulseGenerator gatePulseB;
@@ -255,9 +253,12 @@ struct TL_Seq4 : Module {
 			latch_a[i] = params[stepsParamsA[i]].getValue() == 1.0f;
 		}
 
-		length_a  = params[LENGTH_1_PARAM].getValue() == 1.0f;
+		if (inputs[LENGTH_1_INPUT].isConnected()) {
+        	length_a = inputs[LENGTH_1_INPUT].getVoltage() >= 1.0f;
+    	} else {
+        	length_a = params[LENGTH_1_PARAM].getValue() == 1.0f;
+    	}
 		input_a   = inputs[IN_STEP_1_INPUT].getVoltage() >= 1.0f;
-		cv_len_a  = inputs[LENGTH_1_INPUT].getVoltage() >= 1.0f;
 
 		reverse_a = params[REVERSE_1_PARAM].getValue() == 1.0f;
 		cv_rev_a  = inputs[REVERSE_1_INPUT].getVoltage() >= 1.0f;
@@ -285,10 +286,12 @@ struct TL_Seq4 : Module {
 			latch_b[i] = params[stepsParamsB[i]].getValue() == 1.0f;
 		}
 
-		length_b  = params[LENGTH_2_PARAM].getValue() == 1.0f;
+		if (inputs[LENGTH_2_INPUT].isConnected()) {
+			length_b = inputs[LENGTH_2_INPUT].getVoltage() >= 1.0f;
+		} else {
+			length_b = params[LENGTH_2_PARAM].getValue() == 1.0f;
+		}
 		input_b   = inputs[IN_STEP_2_INPUT].getVoltage() >= 1.0f;
-		cv_len_b  = inputs[LENGTH_2_INPUT].getVoltage() >= 1.0f;
-
 
 		reverse_b = params[REVERSE_2_PARAM].getValue() == 1.0f;
 		cv_rev_b  = inputs[REVERSE_2_INPUT].getVoltage() >= 1.0f;
