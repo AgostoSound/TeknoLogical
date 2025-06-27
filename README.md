@@ -1,6 +1,6 @@
 # TeknoLogical Module Collection
 
-**TeknoLogical** is a collection of **VCV Rack 2** modules designed specifically for live minimal techno performance.
+**TeknoLogical** is a collection of **VCV Rack 2** modules designed for live minimal techno performance.
 
 Each module is a purpose-built tool focused on generating and developing rhythmic and melodic patterns through sequencing, tone generation, and controlled randomization. The collection is curated to enable complete performances with minimal external dependencies, offering a streamlined, cohesive, and instantly playable system.
 
