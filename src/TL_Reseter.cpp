@@ -1,6 +1,10 @@
 #include "plugin.hpp"
 #include "../helpers/widgets/switches.hpp"
 
+struct ReseterMessage {
+    bool aGate = false;
+    bool bGate = false;
+};
 
 // General structure.
 struct TL_Reseter : Module {
@@ -29,9 +33,10 @@ struct TL_Reseter : Module {
 // --------------------   Set initial values  ------------------------------------
     float aLightIntensity = 0.f;
     float bLightIntensity = 0.f;
-
     bool aPressed = false;
     bool bPressed = false;
+	bool lastAPressed = false;
+	bool lastBPressed = false;
 
 // --------------------   Config module  -----------------------------------------
 	TL_Reseter() {
@@ -66,10 +71,60 @@ struct TL_Reseter : Module {
         lights[PUSH_B_LED].setBrightness(bLightIntensity);
     }
 
+	void sendToExpander() {
+		ReseterMessage* msg = nullptr;
+
+		// Detectar flanco ascendente en A
+		bool sendA = (!lastAPressed && aPressed);
+		lastAPressed = aPressed;
+
+		// Detectar flanco ascendente en B
+		bool sendB = (!lastBPressed && bPressed);
+		lastBPressed = bPressed;
+
+		// Enviar A hacia el lado elegido
+		int aSide = (int)params[SIDE_A_PARAM].getValue();
+		if (aSide == 0 && leftExpander.module) {
+			msg = (ReseterMessage*)leftExpander.producerMessage;
+			if (msg) {
+				msg->aGate = sendA;
+				msg->bGate = false;  // Importante limpiar bGate para no mezclar señales
+			}
+			leftExpander.requestMessageFlip();
+		}
+		else if (aSide == 1 && rightExpander.module) {
+			msg = (ReseterMessage*)rightExpander.producerMessage;
+			if (msg) {
+				msg->aGate = sendA;
+				msg->bGate = false;
+			}
+			rightExpander.requestMessageFlip();
+		}
+
+		// Enviar B hacia el lado elegido
+		int bSide = (int)params[SIDE_B_PARAM].getValue();
+		if (bSide == 0 && leftExpander.module) {
+			msg = (ReseterMessage*)leftExpander.producerMessage;
+			if (msg) {
+				msg->aGate = false;
+				msg->bGate = sendB;
+			}
+			leftExpander.requestMessageFlip();
+		}
+		else if (bSide == 1 && rightExpander.module) {
+			msg = (ReseterMessage*)rightExpander.producerMessage;
+			if (msg) {
+				msg->aGate = false;
+				msg->bGate = sendB;
+			}
+			rightExpander.requestMessageFlip();
+		}
+	}
 
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
         updateLightsAndTriggers(args.sampleTime);
+		sendToExpander();
     }
 };
 

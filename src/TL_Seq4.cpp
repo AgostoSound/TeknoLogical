@@ -1,5 +1,9 @@
 #include "plugin.hpp"
 
+struct ReseterMessage {
+    bool aGate = false;
+    bool bGate = false;
+};
 
 // General structure.
 struct TL_Seq4 : Module {
@@ -172,6 +176,10 @@ struct TL_Seq4 : Module {
 	dsp::SchmittTrigger length_b_cv_trigger;  // Para detectar flancos en el input CV
 	bool manual_length_b = false;
 	
+	ReseterMessage leftMessageBuffer[2];
+	ReseterMessage rightMessageBuffer[2];
+	bool lastAReset = false;
+	bool lastBReset = false;
 	int totalStepsA, totalStepsB;
 	bool latchStates[24];
 	float gateOut;
@@ -227,6 +235,11 @@ struct TL_Seq4 : Module {
 		configSwitch(STEP_B16_PARAM, 0.f, 1.f, 0.f, "16", on_off_labels);
 			
 		configOutput(OUT_2_OUTPUT, "Seq B");
+
+		leftExpander.consumerMessage = &leftMessageBuffer[0];
+		leftExpander.producerMessage = &leftMessageBuffer[1];
+		rightExpander.consumerMessage = &rightMessageBuffer[0];
+		rightExpander.producerMessage = &rightMessageBuffer[1];
 	}
 
 // --------------------   Functions  ---------------------------------------------
@@ -369,9 +382,26 @@ struct TL_Seq4 : Module {
 		}
 	}
 
+	// TEST
+	void applyResetFromMsg(ReseterMessage* msg) {
+		if (!msg) return;
+		// flanco ascendente aGate
+		if (msg->aGate && !lastAReset) {
+			currentStepA = 0;
+		}
+		// flanco ascendente bGate
+		if (msg->bGate && !lastBReset) {
+			currentStepB = 0;
+		}
+		lastAReset = msg->aGate;
+		lastBReset = msg->bGate;
+	}
 
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
+		applyResetFromMsg((ReseterMessage*)leftExpander.consumerMessage);
+		applyResetFromMsg((ReseterMessage*)rightExpander.consumerMessage);
+
 		updateAllInputStates();  // Update inputs values.
 		setStepsLeds(this, latch_a, 8, latch_b, 16);  // Set Latch steps LEDs.
 
