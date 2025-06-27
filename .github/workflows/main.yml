@@ -2,9 +2,9 @@ name: Build VCV Rack Plugin
 
 on:
   push:
-    branches: [ main ]
+    branches: [ cross-compiling ]
   pull_request:
-    branches: [ main ]
+    branches: [ cross-compiling ]
   workflow_dispatch:
 
 jobs:
