@@ -1,5 +1,5 @@
 #include "plugin.hpp"
-#include "widgets/switches.hpp"
+#include "../helpers/widgets/switches.hpp"
 
 
 // General structure.
