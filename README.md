@@ -17,8 +17,6 @@ The direction of this project is not driven by a desire for maximum flexibility 
 ## 📦 Included Modules
 
 - [TL-Drum5](docs/TL-Drum5.md) – 5-Voice Polyphonic Drum Machine.
-- [TL-Seq4](docs/TL-Seq4.md) – Double channel pair sequencer.
-
 
 ## 📥 Installation
 
