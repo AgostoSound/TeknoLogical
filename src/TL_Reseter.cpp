@@ -1,6 +1,8 @@
 #include "plugin.hpp"
-#include "widgets/switches.hpp"
+#include "../helpers/widgets/switches.hpp"
+#include "../helpers/messages.hpp"
 
+extern Model* modelTL_Seq4;  // declaración externa
 
 // General structure.
 struct TL_Reseter : Module {
@@ -29,9 +31,13 @@ struct TL_Reseter : Module {
 // --------------------   Set initial values  ------------------------------------
     float aLightIntensity = 0.f;
     float bLightIntensity = 0.f;
-
     bool aPressed = false;
     bool bPressed = false;
+	bool lastAPressed = false;
+	bool lastBPressed = false;
+
+	ReseterMessage leftBuf[2];
+	ReseterMessage rightBuf[2];
 
 // --------------------   Config module  -----------------------------------------
 	TL_Reseter() {
@@ -42,6 +48,11 @@ struct TL_Reseter : Module {
 		configSwitch(SIDE_B_PARAM, 0.f, 1.f, 0.f, "Side B", {"Left", "Right"});
 		configInput(IN_A_INPUT, "Gate A");
 		configInput(IN_B_INPUT, "Gate B");
+		// Expander: asigna buffers para este módulo
+		leftExpander.producerMessage  = &leftBuf[0];
+		leftExpander.consumerMessage  = &leftBuf[1];
+		rightExpander.producerMessage = &rightBuf[0];
+		rightExpander.consumerMessage = &rightBuf[1];
 	}
 
 // --------------------   Functions  ---------------------------------------------
@@ -66,10 +77,46 @@ struct TL_Reseter : Module {
         lights[PUSH_B_LED].setBrightness(bLightIntensity);
     }
 
+	void sendToExpander() {
+		bool sendA = (!lastAPressed && aPressed);
+		bool sendB = (!lastBPressed && bPressed);
+		lastAPressed = aPressed;
+		lastBPressed = bPressed;
+
+		bool aToLeft  = params[SIDE_A_PARAM].getValue() == 0 && sendA;
+		bool aToRight = params[SIDE_A_PARAM].getValue() == 1 && sendA;
+		bool bToLeft  = params[SIDE_B_PARAM].getValue() == 0 && sendB;
+		bool bToRight = params[SIDE_B_PARAM].getValue() == 1 && sendB;
+
+		// Si hay vecino, escribe; si no, asegúrate de dejar en false
+		auto* l = (ReseterMessage*) leftExpander.producerMessage;
+		auto* r = (ReseterMessage*) rightExpander.producerMessage;
+
+		if (leftExpander.module) {
+			l->aGate = aToLeft;
+			l->bGate = bToLeft;
+			leftExpander.requestMessageFlip();
+		} else {
+			l->aGate = false;
+			l->bGate = false;
+		}
+
+		if (rightExpander.module) {
+			r->aGate = aToRight;
+			r->bGate = bToRight;
+			rightExpander.requestMessageFlip();
+		} else {
+			r->aGate = false;
+			r->bGate = false;
+		}
+	}
+
+
 
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
         updateLightsAndTriggers(args.sampleTime);
+		sendToExpander();
     }
 };
 
