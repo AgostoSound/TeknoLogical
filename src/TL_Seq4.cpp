@@ -1,9 +1,6 @@
 #include "plugin.hpp"
+#include "../helpers/messages.hpp"
 
-struct ReseterMessage {
-    bool aGate = false;
-    bool bGate = false;
-};
 
 // General structure.
 struct TL_Seq4 : Module {
@@ -143,6 +140,9 @@ struct TL_Seq4 : Module {
 
 // --------------------   Set initial values  ------------------------------------
 
+	dsp::BooleanTrigger resetATrigger;
+	dsp::BooleanTrigger resetBTrigger;
+
 	// Seq A.
 	bool input_a = false;
 	bool latch_a[8];
@@ -176,13 +176,50 @@ struct TL_Seq4 : Module {
 	dsp::SchmittTrigger length_b_cv_trigger;  // Para detectar flancos en el input CV
 	bool manual_length_b = false;
 	
-	ReseterMessage leftMessageBuffer[2];
-	ReseterMessage rightMessageBuffer[2];
-	bool lastAReset = false;
-	bool lastBReset = false;
 	int totalStepsA, totalStepsB;
 	bool latchStates[24];
 	float gateOut;
+
+	// --- Expander: lectura de resets que llegan por vecinos ---
+    bool resetAPulse = false;
+    bool resetBPulse = false;
+
+	ReseterMessage leftBuf[2];
+	ReseterMessage rightBuf[2];
+
+	inline void readExpanderResets() {
+		bool a = false, b = false;
+
+		// --- Ruta directa: leer el producer del vecino ---
+		if (leftExpander.module /* && leftExpander.module->model == modelTL_Reseter */) {
+			auto* p = (ReseterMessage*) leftExpander.module->rightExpander.producerMessage;
+			a |= p->aGate;
+			b |= p->bGate;
+		}
+		if (rightExpander.module /* && rightExpander.module->model == modelTL_Reseter */) {
+			auto* p = (ReseterMessage*) rightExpander.module->leftExpander.producerMessage;
+			a |= p->aGate;
+			b |= p->bGate;
+		}
+
+		// --- Respaldo: también leer tu consumer + pedir flip ---
+		if (leftExpander.module) {
+			auto* c = (ReseterMessage*) leftExpander.consumerMessage;
+			a |= c->aGate;
+			b |= c->bGate;
+			leftExpander.requestMessageFlip();
+		}
+		if (rightExpander.module) {
+			auto* c = (ReseterMessage*) rightExpander.consumerMessage;
+			a |= c->aGate;
+			b |= c->bGate;
+			rightExpander.requestMessageFlip();
+		}
+
+		// Pulso de 1 frame a partir del nivel (edge detector)
+		resetAPulse = resetATrigger.process(a);
+		resetBPulse = resetBTrigger.process(b);
+	}
 
 
 // --------------------   Config module  -----------------------------------------
@@ -236,10 +273,11 @@ struct TL_Seq4 : Module {
 			
 		configOutput(OUT_2_OUTPUT, "Seq B");
 
-		leftExpander.consumerMessage = &leftMessageBuffer[0];
-		leftExpander.producerMessage = &leftMessageBuffer[1];
-		rightExpander.consumerMessage = &rightMessageBuffer[0];
-		rightExpander.producerMessage = &rightMessageBuffer[1];
+		// Expander: asigna buffers para este módulo
+		leftExpander.producerMessage  = &leftBuf[0];
+		leftExpander.consumerMessage  = &leftBuf[1];
+		rightExpander.producerMessage = &rightBuf[0];
+		rightExpander.consumerMessage = &rightBuf[1];
 	}
 
 // --------------------   Functions  ---------------------------------------------
@@ -382,31 +420,20 @@ struct TL_Seq4 : Module {
 		}
 	}
 
-	// TEST
-	void applyResetFromMsg(ReseterMessage* msg) {
-		if (!msg) return;
-		// flanco ascendente aGate
-		if (msg->aGate && !lastAReset) {
-			currentStepA = 0;
-		}
-		// flanco ascendente bGate
-		if (msg->bGate && !lastBReset) {
-			currentStepB = 0;
-		}
-		lastAReset = msg->aGate;
-		lastBReset = msg->bGate;
-	}
-
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
-		applyResetFromMsg((ReseterMessage*)leftExpander.consumerMessage);
-		applyResetFromMsg((ReseterMessage*)rightExpander.consumerMessage);
 
 		updateAllInputStates();  // Update inputs values.
 		setStepsLeds(this, latch_a, 8, latch_b, 16);  // Set Latch steps LEDs.
+		readExpanderResets();
 
 		// Seq A.
 		totalStepsA = length_a ? 8 : 4;
+		if (resetAPulse) {
+			// Limpia cualquier gate pendiente y salta al step visible
+			gatePulseA.reset();
+			currentStepA = reverseA ? (totalStepsA - 1) : 0;
+		}
 		
 		if (clockTriggerA.process(input_a)) {
 			if (reverseA) {
@@ -427,6 +454,10 @@ struct TL_Seq4 : Module {
 		
 		// Seq B.
 		totalStepsB = length_b ? 16 : 8;
+		if (resetBPulse) {
+			gatePulseB.reset();
+			currentStepB = reverseB ? (totalStepsB - 1) : 0;
+		}
 		
 		if (clockTriggerB.process(input_b)) {
 			if (reverseB) {
@@ -571,3 +602,4 @@ struct TL_Seq4Widget : ModuleWidget {
 
 
 Model* modelTL_Seq4 = createModel<TL_Seq4, TL_Seq4Widget>("TL_Seq4");
+extern Model* modelTL_Reseter;

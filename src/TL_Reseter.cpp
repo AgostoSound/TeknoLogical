@@ -1,10 +1,8 @@
 #include "plugin.hpp"
 #include "../helpers/widgets/switches.hpp"
+#include "../helpers/messages.hpp"
 
-struct ReseterMessage {
-    bool aGate = false;
-    bool bGate = false;
-};
+extern Model* modelTL_Seq4;  // declaración externa
 
 // General structure.
 struct TL_Reseter : Module {
@@ -38,6 +36,9 @@ struct TL_Reseter : Module {
 	bool lastAPressed = false;
 	bool lastBPressed = false;
 
+	ReseterMessage leftBuf[2];
+	ReseterMessage rightBuf[2];
+
 // --------------------   Config module  -----------------------------------------
 	TL_Reseter() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -47,6 +48,11 @@ struct TL_Reseter : Module {
 		configSwitch(SIDE_B_PARAM, 0.f, 1.f, 0.f, "Side B", {"Left", "Right"});
 		configInput(IN_A_INPUT, "Gate A");
 		configInput(IN_B_INPUT, "Gate B");
+		// Expander: asigna buffers para este módulo
+		leftExpander.producerMessage  = &leftBuf[0];
+		leftExpander.consumerMessage  = &leftBuf[1];
+		rightExpander.producerMessage = &rightBuf[0];
+		rightExpander.consumerMessage = &rightBuf[1];
 	}
 
 // --------------------   Functions  ---------------------------------------------
@@ -72,54 +78,40 @@ struct TL_Reseter : Module {
     }
 
 	void sendToExpander() {
-		ReseterMessage* msg = nullptr;
-
-		// Detectar flanco ascendente en A
 		bool sendA = (!lastAPressed && aPressed);
-		lastAPressed = aPressed;
-
-		// Detectar flanco ascendente en B
 		bool sendB = (!lastBPressed && bPressed);
+		lastAPressed = aPressed;
 		lastBPressed = bPressed;
 
-		// Enviar A hacia el lado elegido
-		int aSide = (int)params[SIDE_A_PARAM].getValue();
-		if (aSide == 0 && leftExpander.module) {
-			msg = (ReseterMessage*)leftExpander.producerMessage;
-			if (msg) {
-				msg->aGate = sendA;
-				msg->bGate = false;  // Importante limpiar bGate para no mezclar señales
-			}
+		bool aToLeft  = params[SIDE_A_PARAM].getValue() == 0 && sendA;
+		bool aToRight = params[SIDE_A_PARAM].getValue() == 1 && sendA;
+		bool bToLeft  = params[SIDE_B_PARAM].getValue() == 0 && sendB;
+		bool bToRight = params[SIDE_B_PARAM].getValue() == 1 && sendB;
+
+		// Si hay vecino, escribe; si no, asegúrate de dejar en false
+		auto* l = (ReseterMessage*) leftExpander.producerMessage;
+		auto* r = (ReseterMessage*) rightExpander.producerMessage;
+
+		if (leftExpander.module) {
+			l->aGate = aToLeft;
+			l->bGate = bToLeft;
 			leftExpander.requestMessageFlip();
-		}
-		else if (aSide == 1 && rightExpander.module) {
-			msg = (ReseterMessage*)rightExpander.producerMessage;
-			if (msg) {
-				msg->aGate = sendA;
-				msg->bGate = false;
-			}
-			rightExpander.requestMessageFlip();
+		} else {
+			l->aGate = false;
+			l->bGate = false;
 		}
 
-		// Enviar B hacia el lado elegido
-		int bSide = (int)params[SIDE_B_PARAM].getValue();
-		if (bSide == 0 && leftExpander.module) {
-			msg = (ReseterMessage*)leftExpander.producerMessage;
-			if (msg) {
-				msg->aGate = false;
-				msg->bGate = sendB;
-			}
-			leftExpander.requestMessageFlip();
-		}
-		else if (bSide == 1 && rightExpander.module) {
-			msg = (ReseterMessage*)rightExpander.producerMessage;
-			if (msg) {
-				msg->aGate = false;
-				msg->bGate = sendB;
-			}
+		if (rightExpander.module) {
+			r->aGate = aToRight;
+			r->bGate = bToRight;
 			rightExpander.requestMessageFlip();
+		} else {
+			r->aGate = false;
+			r->bGate = false;
 		}
 	}
+
+
 
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
