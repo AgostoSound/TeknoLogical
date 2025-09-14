@@ -9,6 +9,8 @@ Each module is a tool focused on generating and developing rhythmic and melodic 
 ## 📦 Included Modules
 
 - [TL-Drum5](docs/TL-Drum5.md) – 5-Voice Polyphonic Drum Machine.
+- [TL-Seq4](docs/TL-Seq4.md) – 4-8-16 Dual channel step sequencer.
+- [TL-Reseter](docs/TL-Reseter.md) – Dual channel reset expander.
 
 
 ## 📥 Installation
