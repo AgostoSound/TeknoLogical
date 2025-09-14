@@ -3,7 +3,7 @@
 #include "plugin.hpp"
 #include "rack.hpp"
 #include "dsp/filter.hpp"
-#include "dsp_utils.hpp"
+#include "../helpers/dsp_utils.hpp"
 #include "../res/samples/kick.h"
 #include "../res/samples/snare.h"
 #include "../res/samples/clap.h"
