@@ -2,6 +2,8 @@
 #include "../helpers/messages.hpp"
 
 
+extern Model* modelTL_Reseter;
+
 // General structure.
 struct TL_Seq4 : Module {
 // --------------------   Visual components namespace  ---------------------------
@@ -190,33 +192,38 @@ struct TL_Seq4 : Module {
 	inline void readExpanderResets() {
 		bool a = false, b = false;
 
-		// --- Ruta directa: leer el producer del vecino ---
-		if (leftExpander.module /* && leftExpander.module->model == modelTL_Reseter */) {
+		// --- Lectura directa del producer del vecino (garantiza ver el pulso aunque el flip caiga desfasado)
+		if (leftExpander.module && leftExpander.module->model == modelTL_Reseter) {
 			auto* p = (ReseterMessage*) leftExpander.module->rightExpander.producerMessage;
-			a |= p->aGate;
-			b |= p->bGate;
+			if (p) { a |= p->aGate; b |= p->bGate; }
 		}
-		if (rightExpander.module /* && rightExpander.module->model == modelTL_Reseter */) {
+		if (rightExpander.module && rightExpander.module->model == modelTL_Reseter) {
 			auto* p = (ReseterMessage*) rightExpander.module->leftExpander.producerMessage;
-			a |= p->aGate;
-			b |= p->bGate;
+			if (p) { a |= p->aGate; b |= p->bGate; }
 		}
 
-		// --- Respaldo: también leer tu consumer + pedir flip ---
-		if (leftExpander.module) {
+		// --- Respaldo: también leer mi consumer y pedir flip (ruta “oficial” del expander)
+		if (leftExpander.module && leftExpander.module->model == modelTL_Reseter) {
 			auto* c = (ReseterMessage*) leftExpander.consumerMessage;
 			a |= c->aGate;
 			b |= c->bGate;
 			leftExpander.requestMessageFlip();
+		} else {
+			((ReseterMessage*) leftExpander.consumerMessage)->aGate = false;
+			((ReseterMessage*) leftExpander.consumerMessage)->bGate = false;
 		}
-		if (rightExpander.module) {
+
+		if (rightExpander.module && rightExpander.module->model == modelTL_Reseter) {
 			auto* c = (ReseterMessage*) rightExpander.consumerMessage;
 			a |= c->aGate;
 			b |= c->bGate;
 			rightExpander.requestMessageFlip();
+		} else {
+			((ReseterMessage*) rightExpander.consumerMessage)->aGate = false;
+			((ReseterMessage*) rightExpander.consumerMessage)->bGate = false;
 		}
 
-		// Pulso de 1 frame a partir del nivel (edge detector)
+		// Genera pulso de 1 frame a partir del nivel combinado
 		resetAPulse = resetATrigger.process(a);
 		resetBPulse = resetBTrigger.process(b);
 	}
@@ -428,7 +435,7 @@ struct TL_Seq4 : Module {
 		readExpanderResets();
 
 		// Seq A.
-		totalStepsA = length_a ? 8 : 4;
+		totalStepsA = lengthA ? 8 : 4;
 		if (resetAPulse) {
 			// Limpia cualquier gate pendiente y salta al step visible
 			gatePulseA.reset();
@@ -453,7 +460,7 @@ struct TL_Seq4 : Module {
 
 		
 		// Seq B.
-		totalStepsB = length_b ? 16 : 8;
+		totalStepsB = lengthB ? 16 : 8;
 		if (resetBPulse) {
 			gatePulseB.reset();
 			currentStepB = reverseB ? (totalStepsB - 1) : 0;

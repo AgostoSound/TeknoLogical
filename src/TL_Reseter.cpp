@@ -88,11 +88,10 @@ struct TL_Reseter : Module {
 		bool bToLeft  = params[SIDE_B_PARAM].getValue() == 0 && sendB;
 		bool bToRight = params[SIDE_B_PARAM].getValue() == 1 && sendB;
 
-		// Si hay vecino, escribe; si no, asegúrate de dejar en false
 		auto* l = (ReseterMessage*) leftExpander.producerMessage;
 		auto* r = (ReseterMessage*) rightExpander.producerMessage;
 
-		if (leftExpander.module) {
+		if (leftExpander.module && leftExpander.module->model == modelTL_Seq4) {
 			l->aGate = aToLeft;
 			l->bGate = bToLeft;
 			leftExpander.requestMessageFlip();
@@ -101,7 +100,7 @@ struct TL_Reseter : Module {
 			l->bGate = false;
 		}
 
-		if (rightExpander.module) {
+		if (rightExpander.module && rightExpander.module->model == modelTL_Seq4) {
 			r->aGate = aToRight;
 			r->bGate = bToRight;
 			rightExpander.requestMessageFlip();
@@ -110,8 +109,6 @@ struct TL_Reseter : Module {
 			r->bGate = false;
 		}
 	}
-
-
 
 // --------------------   Main cycle logic  --------------------------------------
 	void process(const ProcessArgs& args) override {
