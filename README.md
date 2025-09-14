@@ -1,6 +1,7 @@
 # TeknoLogical Module Collection
 
-<img width="309" height="124" alt="tecnologo" src="https://github.com/user-attachments/assets/3c8063d5-f0b7-4701-8e4d-0dd54f68fb80" />
+<img width="309" height="124" alt="tecnologo" src="https://github.com/user-attachments/assets/8c090297-3238-41ae-8a1e-a2d54ca1af6a" />
+
 <img width="1859" height="955" alt="Captura de pantalla 2025-09-14 143342" src="https://github.com/user-attachments/assets/101491ad-32a5-453a-88ed-4014a4d51b29" />
 
 **TeknoLogical** is a collection of **VCV Rack 2** modules designed for live minimal techno performance.
