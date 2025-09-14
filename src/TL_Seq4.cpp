@@ -437,7 +437,6 @@ struct TL_Seq4 : Module {
 		// Seq A.
 		totalStepsA = lengthA ? 8 : 4;
 		if (resetAPulse) {
-			// Limpia cualquier gate pendiente y salta al step visible
 			gatePulseA.reset();
 			currentStepA = reverseA ? (totalStepsA - 1) : 0;
 		}
@@ -450,11 +449,11 @@ struct TL_Seq4 : Module {
 			}
 			
 			if (latch_a[currentStepA]) {
-				gatePulseA.trigger(1e-3f); // Pulso de 1 ms
+				gatePulseA.trigger(1e-3f); // 1 ms pulse.
 			}
 		}
 		
-		// Emitir el pulso si está activo.
+		// Generate pulse.
 		float gateOutA = gatePulseA.process(args.sampleTime) ? 10.f : 0.f;
 		outputs[OUT_1_OUTPUT].setVoltage(gateOutA);
 
@@ -474,11 +473,11 @@ struct TL_Seq4 : Module {
 			}
 			
 			if (latch_b[currentStepB]) {
-				gatePulseB.trigger(1e-3f); // Pulso de 1 ms
+				gatePulseB.trigger(1e-3f); // 1 ms pulse.
 			}
 		}
 		
-		// Emitir el pulso si está activo.
+		// Generate pulse.
 		float gateOutB = gatePulseB.process(args.sampleTime) ? 10.f : 0.f;
 		outputs[OUT_2_OUTPUT].setVoltage(gateOutB);
 
