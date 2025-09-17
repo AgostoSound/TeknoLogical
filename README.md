@@ -2,7 +2,7 @@
 
 <img width="309" height="124" alt="tecnologo" src="https://github.com/user-attachments/assets/8c090297-3238-41ae-8a1e-a2d54ca1af6a" />
 
-<img width="1859" height="955" alt="Captura de pantalla 2025-09-14 143342" src="https://github.com/user-attachments/assets/101491ad-32a5-453a-88ed-4014a4d51b29" />
+<img width="1864" height="900" alt="Captura de pantalla 2025-09-17 225011" src="https://github.com/user-attachments/assets/6339b8a1-acb2-4165-b02e-fb52211948f4" />
 
 **TeknoLogical** is a collection of **VCV Rack 2** modules designed for live minimal techno performance.
 
@@ -23,6 +23,7 @@ The direction of this project is not driven by a desire for maximum flexibility 
 - [TL-Drum5](docs/TL-Drum5.md) – 5-Voice Polyphonic Drum Machine.
 - [TL-Seq4](docs/TL-Seq4.md) – 4-8-16 Dual channel step sequencer.
 - [TL-Reseter](docs/TL-Reseter.md) – Dual channel reset expander.
+- [TL-Bass](docs/TL-Bass.md) – Bass trigger.
 
 ## 📥 Installation
 
