@@ -5,7 +5,7 @@ using namespace rack;
 using namespace DSPUtils;
 
 // -----------------------------
-// Oscilador polyBLEP (saw/square) + sub-sine
+// Oscilador: una sola "advance" por muestra, lecturas sin avanzar
 // -----------------------------
 struct PolyBLEPOsc {
 	float phase = 0.f;    // [0,1)
@@ -17,7 +17,8 @@ struct PolyBLEPOsc {
 	void setFreq(float f) { freq = clamp(f, 10.f, 12000.f); }
 	void resetPhase() { phase = 0.f; subPhase = 0.f; }
 
-	inline float polyblep(float t, float dt) {
+	// <- FIX: static para poder llamarla desde métodos const
+	static inline float polyblep(float t, float dt) {
 		if (t < dt) { t /= dt; return t + t - t*t - 1.f; }
 		if (t > 1.f - dt) { t = (t - 1.f) / dt; return t*t + t + t + 1.f; }
 		return 0.f;
@@ -31,23 +32,34 @@ struct PolyBLEPOsc {
 		subPhase += subDt; if (subPhase >= 1.f) subPhase -= 1.f;
 	}
 
-	float processSaw() {
-		float dt = freq / sr;
-		advance();
-		float out = 2.f * phase - 1.f;
-		out -= polyblep(phase, dt);
-		return out;
+	// Lecturas sin avanzar
+	inline float sine() const {
+		return std::sin(2.f * M_PI * phase);
 	}
 
-	float processSquare(float pwm = 0.5f) {
+	// Triángulo naive a partir de la fase actual
+	inline float triangle() const {
+		// 2*|2*phase-1|-1  -> [-1, +1]
+		float t = 2.f * phase - 1.f;
+		return 2.f * std::fabs(t) - 1.f;
+	}
+
+	// Saw / Square BLEP calculadas sobre la fase actual (sin avanzar)
+	inline float sawBLEP() const {
+		float dt = freq / sr;
+		float x = 2.f * phase - 1.f;
+		// resta de BLEP en discontinuidad
+		float s = x - polyblep(phase, dt);
+		return s;
+	}
+	inline float squareBLEP(float pwm = 0.5f) const {
 		pwm = clamp(pwm, 0.05f, 0.95f);
 		float dt = freq / sr;
-		advance();
-		float out = (phase < pwm) ? 1.f : -1.f;
-		out += polyblep(phase, dt);
+		float y = (phase < pwm) ? 1.f : -1.f;
+		y += polyblep(phase, dt);
 		float t = std::fmod(phase - pwm + 1.f, 1.f);
-		out -= polyblep(t, dt);
-		return out;
+		y -= polyblep(t, dt);
+		return y;
 	}
 
 	inline float subSine() const {
@@ -62,7 +74,7 @@ struct TL_Bass : Module {
 	enum ParamId {
 		BTN_TRIG_PARAM,
 		FILTER_KNOB_PARAM,     // -10..+10  (0=bypass; <0 LP; >0 HP)
-		DECAY_KNOB_PARAM,      // -10..+10  (usa tu DecayEnvelope)
+		DECAY_KNOB_PARAM,      // -10..+10
 		TIMBRE_SELECTOR_PARAM, // “1 / 2”
 		PARAMS_LEN
 	};
@@ -81,13 +93,19 @@ struct TL_Bass : Module {
 	PolyBLEPOsc osc;
 
 	// Envolventes
-	DecayEnvelope env;
-	float env2 = 0.f;     // transitorio para “punch”
+	DecayEnvelope env; // principal (D)
+	float atkEnv = 1.f; // anti-click (micro ataque)
+	float atkCoeff = 1.f;
+	float env2 = 0.f;     // reservado
 	float env2Coeff = 0.999f;
 
-	// Filtros como en TL-Drum5
+	// Filtros (contrato TL-Drum5)
 	CachedLowPass  lowFilter;
 	CachedHighPass highFilter;
+
+	// Tonalidad fija para el timbre 2 (pre/post)
+	HighPassFilter preT2HP;   // aprieta sub-50 Hz
+	LowPassFilter  postT2LP;  // redondea >6 kHz
 
 	// DC-block
 	HighPassFilter dcBlock;
@@ -95,8 +113,7 @@ struct TL_Bass : Module {
 	// Gestión V/Oct
 	bool voctWasConnected = false;
 
-	// 0 V = 440 Hz; queremos C2 ≈ 65.406 Hz como “default”.
-	// offset en voltios: log2(65.406/440) ≈ -2.75 V
+	// 0 V = 440 Hz; “default” C2 ≈ 65.406 Hz -> offset ≈ -2.75 V
 	static constexpr float BASE_V_DEFAULT = -2.75f;
 
 	TL_Bass() {
@@ -104,7 +121,7 @@ struct TL_Bass : Module {
 		configParam(BTN_TRIG_PARAM, 0.f, 1.f, 0.f, "Trigger");
 		configParam(FILTER_KNOB_PARAM, -10.f, 10.f, 0.f, "Filter");
 		configParam(DECAY_KNOB_PARAM, -10.f, 10.f, 0.f, "Decay");
-		configSwitch(TIMBRE_SELECTOR_PARAM, 0.f, 1.f, 1.f, "Timbre", {"2", "1"});
+		configSwitch(TIMBRE_SELECTOR_PARAM, 0.f, 1.f, 1.f, "Timbre", {"2", "1"}); // etiqueta panel
 
 		configInput(TRIGGER_JACK_INPUT, "Trigger");
 		configInput(VOCT_JACK_INPUT,    "V/Oct (±2 oct)");
@@ -116,7 +133,16 @@ struct TL_Bass : Module {
 	void onSampleRateChange() override {
 		float sr = APP->engine->getSampleRate();
 		osc.setSampleRate(sr);
+
+		// DC-block ~20 Hz
 		dcBlock.setCutoff(20.f, sr);
+
+		// Anti-click ataque ~0.5 ms
+		atkCoeff = std::exp(-1.f / (0.0005f * sr));
+
+		// Timbre 2: tono fijo
+		preT2HP.setCutoff(45.f, sr);    // recorta el rumble ultra-bajo
+		postT2LP.setCutoff(6000.f, sr); // suaviza el brillo áspero
 	}
 
 	void process(const ProcessArgs& args) override {
@@ -131,7 +157,7 @@ struct TL_Bass : Module {
 		// Detectar desconexión de V/Oct → disparo “default”
 		bool voctNow = inputs[VOCT_JACK_INPUT].isConnected();
 		if (voctWasConnected && !voctNow) {
-			fired = true;                // re-dispara al desconectar
+			fired = true; // re-dispara al desconectar
 		}
 		voctWasConnected = voctNow;
 
@@ -142,54 +168,67 @@ struct TL_Bass : Module {
 			+ (inputs[DECAY_JACK_INPUT].isConnected() ? inputs[DECAY_JACK_INPUT].getVoltage() : 0.f),
 			-10.f, 10.f);
 
-		// Envolvente secundaria (≈3 ms)
-		env2Coeff = std::exp(-1.f / (0.003f * sr));
+		// Envolventes
+		env2Coeff = std::exp(-1.f / (0.003f * sr)); // por si más tarde lo usamos
+
 		if (fired) {
 			env.trigger(decayParam, sr);
-			env2 = 1.f;
-			osc.resetPhase();
+			// Anti-click: iniciar ataque en 0 (sube a 1 en 0.5 ms)
+			atkEnv = 0.f;
+			// Si prefieres fase idéntica cada golpe, descomenta:
+			// osc.resetPhase();
 		}
 
 		// --- Pitch 1 V/oct limitado a ±2 oct
 		float pitchIn = voctNow ? clamp(inputs[VOCT_JACK_INPUT].getVoltage(), -2.f, 2.f) : 0.f;
 		float pitchV  = BASE_V_DEFAULT + pitchIn;  // base C2 + desviación limitada
 		float freq    = 440.f * std::pow(2.f, pitchV);
+		osc.setFreq(clamp(freq, 10.f, 12000.f));
 
-		// Timbre
-		bool mode1 = params[TIMBRE_SELECTOR_PARAM].getValue() > 0.5f; // “1” clásico / “2” agresivo
+		// Avanzar fase UNA vez y samplear formas desde la misma fase
+		osc.advance();
+		float s   = osc.sine();
+		float tr  = osc.triangle();
+		float sub = osc.subSine();
+		float sq  = osc.squareBLEP(0.48f);
+		float sw  = osc.sawBLEP();
 
-		// Ligerísimo pitch-bend inicial en modo 2
-		float bend = mode1 ? 1.f : (1.f + 0.01f * env2);
-		osc.setFreq(clamp(freq * bend, 10.f, 12000.f));
+		// Selector del panel: valor > 0.5 es la posición "1" (limpio)
+		bool pos1_clean = params[TIMBRE_SELECTOR_PARAM].getValue() > 0.5f;
 
-		// --- Osc + sub
-		float oscSample = mode1 ? osc.processSaw() : osc.processSquare(0.48f);
-		float sub = osc.subSine(); // -1 oct
-		// Mezcla “techno”: modo1 con sub presente; modo2 casi sin sub
-		float pre = (mode1 ? (0.75f * oscSample + 0.25f * sub)
-		                   : (0.90f * oscSample + 0.10f * sub));
-
-		// Drive antes del filtro
-		pre = std::tanh((mode1 ? 1.35f : 1.7f) * pre);
+		// --- Timbres
+		float pre = 0.f;
+		if (pos1_clean) {
+			// POSICIÓN 1: **limpio** (casi seno)
+			float clean = 0.90f * s + 0.10f * tr;
+			pre = std::tanh(1.05f * clean); // drive mínimo
+		} else {
+			// POSICIÓN 2: **Music-Man-like** (agresivo, gordo, cálido)
+			float mixCore = 0.55f * sq + 0.45f * sw;  // cuerpo + mordida
+			mixCore = preT2HP.process(mixCore);       // aprieta sub <~45 Hz
+			mixCore = 0.85f * mixCore + 0.15f * sub;  // sub sutil para peso
+			float shaped = std::tanh(1.40f * mixCore) * 0.9f + 0.1f * mixCore; // shaper cálido
+			pre = postT2LP.process(shaped);           // redondeo alto
+		}
 
 		// --- Envolventes
 		float e = env.process();
-		env2 *= env2Coeff;
+		// Anti-click ataque exponencial: sube rápido hacia 1
+		atkEnv = 1.f - (1.f - atkEnv) * atkCoeff;
 
-		// --- Filtro (contrato TL-Drum5): -10..0 LP | 0..+10 HP | 0=bypass
+		// --- Filtro macro (−10..0 LP | 0..+10 HP | 0=bypass)
 		float filterVal = params[FILTER_KNOB_PARAM].getValue()
 			+ (inputs[FILTER_JACK_INPUT].isConnected() ? inputs[FILTER_JACK_INPUT].getVoltage() : 0.f);
 		filterVal = clamp(filterVal, -10.f, 10.f);
 
-		// Tus filtros cacheados: aplicar ambos como en TL-Drum5
 		float x = pre;
 		x = lowFilter.process(x,  filterVal, sr);
 		x = highFilter.process(x, filterVal, sr);
 
-		// VCA
-		float out = x * e;
+		// --- VCA + anti-click
+		float out = x * e * atkEnv;
 
-		// DC-block y normalización ±5 V
+		// --- DC-block y normalización ±5 V
 		out = dcBlock.process(out);
 		out = clamp(out * 5.f, -5.f, 5.f);
 
