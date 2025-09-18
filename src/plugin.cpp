@@ -10,6 +10,8 @@ void init(Plugin* p) {
 	// Add modules here
 	p->addModel(modelTL_Drum5);
 	p->addModel(modelTL_Seq4);
+	p->addModel(modelTL_Reseter);
+	p->addModel(modelTL_Bass);
 
 	// Any other plugin initialization may go here.
 	// As an alternative, consider lazy-loading assets and lookup tables when your module is created to reduce startup times of Rack.
