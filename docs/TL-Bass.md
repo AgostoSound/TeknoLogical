@@ -2,91 +2,79 @@
 
 <img width="318" height="937" alt="Captura de pantalla 2025-09-17 215833" src="https://github.com/user-attachments/assets/2a1dc064-011c-424b-a049-c16185f33c59" />
 
-A **minimal / psy techno bass voice** for VCV Rack. Single-hit (one-shot) **triggered bass** with **1 V/Oct** pitch, a **dual timbre** selector (1/2), and a **bipolar filter** where **0 = bypass**, **negative = low-pass**, **positive = high-pass**.
+**Minimal / psy bass voice for VCV Rack.** One-shot trigger, **1 V/Oct** input, **timbre 1/2** selector, and a **bipolar filter** where **0 = bypass**, **negative = low-pass**, **positive = high-pass**. The engine includes a short anti-click micro-attack and a DC-block on the output.
 
 ---
 
-## 🎛️ Controls
+## Controls
 
 | Control | Description |
-|---|---|
-| **Trigger button (w/ LED)** | Fires a one-shot note. Same behavior as a rising edge at **TRIG**. |
-| **Filter** | Bipolar filter macro (**−10…0 = LP**, **0…+10 = HP**, **0 = bypass**). CV adds 1:1. |
-| **Decay** | One-shot decay time for the VCA envelope (≈ **30 ms → 2 s**). CV adds 1:1. |
-| **1 / 2** | **Timbre selector**: <br>**1 – DeepSaw:** polyBLEP saw + subtle sub-sine, moderate drive. <br>**2 – AcidSquare:** polyBLEP square with a tiny pitch transient and stronger drive. |
+| --- | --- |
+| **TRIG (button with LED)** | Fires a one-shot note. Same behavior as a rising edge at the **TRIG** input. |
+| **FILTER** | Bipolar macro (**−10…0 = LP**, **0…+10 = HP**, **0 = bypass**). **FILTER** CV sums 1:1 with the knob over the same range. |
+| **DECAY** | VCA envelope decay time. **DECAY** CV sums 1:1 with the knob (range **−10…+10**). |
+| **1 / 2** | **Timbre selector**: <br>**1 – Clean**: near-sine blend (sine + a touch of triangle) with minimal drive for round subs. <br>**2 – Music-Man-like**: **polyBLEP square+saw** blend, gentle **HP ~45 Hz** pre-stage, subtle **sub** (−1 oct), **tanh** waveshaper, and **LP ~6 kHz** post-stage for a warm, thick character. |
 
 ---
 
-## 🔌 Inputs
+## Inputs
 
-- **TRIG** – Rising edge starts the note and **restarts phase** + envelope (consistent attacks).
-- **V/OCT** – 1 V/Oct pitch, **clamped to ±2 octaves** around the base note.  
-  If the cable is **not connected** (or gets unplugged), the module **re-triggers** and plays the **default note**.
-  - Default pitch with no cable: **C2 ≈ 65.4 Hz** (internally derived from a 0 V = 440 Hz reference with an offset).
-- **FILTER (CV)** – Adds to the **Filter** knob in the same **−10…+10** range (negative adds LP, positive adds HP).
-- **DECAY (CV)** – Adds to the **Decay** knob.
+- **TRIG** — Triggers the note on a rising edge (from jack or the front-panel button).  
+- **V/OCT** — 1 V/Oct **clamped to ±2 octaves** around the base note. If the cable is **unplugged**, the module **re-triggers** and returns to the default note. Internal reference uses **0 V = 440 Hz** with an offset to place the base pitch.  
+- **FILTER (CV)** — Adds to the **FILTER** knob in the **−10…+10** range.  
+- **DECAY (CV)** — Adds to the **DECAY** knob (range **−10…+10**).  
 
 ---
 
-## 🔈 Output
+## Output
 
-- **OUT** – Mono output **±5 V** (10 Vpp), DC‑blocked, with a gentle pre‑filter saturation for character.
-
----
-
-## 💡 Indicators
-
-- **Trigger LED** – Flashes on each hit.
+- **OUT** — Mono **±5 V** (10 Vpp), **DC-blocked** and normalized. The engine applies a short anti-click micro-attack (~0.5 ms) before the VCA.
 
 ---
 
-## 🎚️ Pitch & Range
+## Tuning & Range
 
-- **Default note** (with V/OCT unpatched): **C2 ≈ 65.4 Hz** (techno-friendly low range).  
-- **V/Oct range**: input is clamped to **±2 octaves** (total **4 octaves** span). Any incoming voltage beyond this is **hard-limited**.
-- Auto **re-trigger** when **unplugging** V/Oct to return to the default note.
-
----
-
-## 🧪 Bipolar Filter
-
-The **Filter** knob and its CV share the same contract:
-
-- **0** → **Bypass** (no filtering).  
-- **−10…0** → **Low‑Pass** (cutoff decreases toward the negative end).  
-- **0…+10** → **High‑Pass** (cutoff increases toward the positive end).
-
-> Implementation mirrors other modules in the series: combined **LowPass** + **HighPass** cached filters, controlled by the sign of the macro value. At exactly **0**, both are bypassed.
+- **Default note (V/OCT unpatched)**: around **C2 ≈ 65.4 Hz** (derived from **0 V = 440 Hz** with **offset ≈ −2.75 V**).  
+- **V/Oct range**: input is **clamped to ±2 oct** (total span of 4 octaves).  
 
 ---
 
-## 🛠️ Notes
+## Bipolar Filter
 
-- **Envelope**: one‑shot **decay** driving the VCA; an internal env‑to‑filter transient adds punch for percussive basslines.
-- **Retrigger behavior**: a new **TRIG** restarts **phase** and **envelope** for tight, consistent attacks.
-- **Timbres**:  
-  - **1 – DeepSaw**: band‑limited saw plus a **sub‑sine (−1 octave)** blend; solid and deep.  
-  - **2 – AcidSquare**: square with a **micro pitch transient** at onset and a hotter drive; edgy/acid/psy.
+Behavior of the filter macro (knob + CV):
 
----
+- **0** → **Bypass**  
+- **−10…0** → **Low-Pass** (more negative = darker)  
+- **0…+10** → **High-Pass** (more positive = tighter low end)
 
-## 🔁 Typical Use
-
-1. Patch a **clock → TRIG** (or tap the button to audition).  
-2. For melodic lines, patch **V/OCT** (input is clamped to ±2 oct).  
-3. Set **Decay** to taste (short for tight minimal; longer for drones/bombs).  
-4. Choose **1/2** then sculpt with **Filter** (negative = round LP; positive = snappy HP).  
-5. Send **OUT** to your mixer/FX; external compression/saturation pairs well.
+Implemented with LP/HP stages controlled by the same macro; at **0** both are bypassed.
 
 ---
 
-## 📌 Tips
+## Implementation Notes / Key Changes
 
-- For **rolling psy** patterns, feed **TRIG** with 1/8 or 1/16 notes and modulate **Filter** subtly with a slow LFO or an accent envelope.  
-- In **mode 1**, keep **Filter** near **0 (bypass)** to maximize sub weight; or nudge into negative for darker tones.  
-- In **mode 2**, a mild **HP** (+1…+3) tightens the low end and leaves space for the kick.
+- **Free phase**: triggers **do not** reset oscillator phase (for natural variation).  
+- **Anti-click**: internal exponential attack ~**0.5 ms** from 0→1 to avoid start clicks.  
+- **Timbre 2**: pre **HP ~45 Hz**, **polyBLEP square+saw** mix, subtle sub, **tanh** shaper, and post **LP ~6 kHz**.  
+- **Safe output**: audio is **DC-filtered ~20 Hz** and limited to **±5 V**.  
 
 ---
 
-[⬅ Back to modules index](../README.md)
+## Typical Use
 
+1. Patch a clock/trigger to **TRIG** or tap the button to audition.  
+2. For melodic lines, patch **V/OCT** (remember: ±2 oct max).  
+3. Set **DECAY** to taste (from percussive to sustained).  
+4. Choose **1/2** and sculpt with **FILTER** (negative = round LP, positive = tight HP).  
+5. Send **OUT** to your mixer/FX; external compression/saturation pairs nicely. *(Typical Rack audio levels: ±5 V).*  
+
+---
+
+## Tips
+
+- In **mode 1 (Clean)**, keep **FILTER** near **0** or slightly negative for maximum sub punch.  
+- In **mode 2**, a gentle **HP** (**+1…+3**) tightens the low end and leaves room for the kick; the post **LP** already smooths top end.  
+
+---
+
+*[⬅ Back to the modules index](../README.md)*
