@@ -147,37 +147,37 @@ struct TL_Mixes : Module {
 
 		configParam(MASTER_PARAM, 0.f, 1.f, 0.f, "Master");
 
-		configInput(L_IN_1_INPUT, "L");
-		configInput(L_IN_2_INPUT, "L");
-		configInput(L_IN_3_INPUT, "L");
-		configInput(L_IN_4_INPUT, "L");
-		configInput(L_IN_5_INPUT, "L");
-		configInput(L_IN_6_INPUT, "L");
-		configInput(L_IN_7_INPUT, "L");
+		configInput(L_IN_1_INPUT, "L audio");
+		configInput(L_IN_2_INPUT, "L audio");
+		configInput(L_IN_3_INPUT, "L audio");
+		configInput(L_IN_4_INPUT, "L audio");
+		configInput(L_IN_5_INPUT, "L audio");
+		configInput(L_IN_6_INPUT, "L audio");
+		configInput(L_IN_7_INPUT, "L audio");
 
-		configInput(R_IN_1_INPUT, "R");
-		configInput(R_IN_2_INPUT, "R");
-		configInput(R_IN_3_INPUT, "R");
-		configInput(R_IN_4_INPUT, "R");
-		configInput(R_IN_5_INPUT, "R");
-		configInput(R_IN_6_INPUT, "R");
-		configInput(R_IN_7_INPUT, "R");
+		configInput(R_IN_1_INPUT, "R audio");
+		configInput(R_IN_2_INPUT, "R audio");
+		configInput(R_IN_3_INPUT, "R audio");
+		configInput(R_IN_4_INPUT, "R audio");
+		configInput(R_IN_5_INPUT, "R audio");
+		configInput(R_IN_6_INPUT, "R audio");
+		configInput(R_IN_7_INPUT, "R audio");
 
-		configInput(VOL_IN_1_INPUT, "Vol");
-		configInput(VOL_IN_2_INPUT, "Vol");
-		configInput(VOL_IN_3_INPUT, "Vol");
-		configInput(VOL_IN_4_INPUT, "Vol");
-		configInput(VOL_IN_5_INPUT, "Vol");
-		configInput(VOL_IN_6_INPUT, "Vol");
-		configInput(VOL_IN_7_INPUT, "Vol");
+		configInput(VOL_IN_1_INPUT, "Vol CV");
+		configInput(VOL_IN_2_INPUT, "Vol CV");
+		configInput(VOL_IN_3_INPUT, "Vol CV");
+		configInput(VOL_IN_4_INPUT, "Vol CV");
+		configInput(VOL_IN_5_INPUT, "Vol CV");
+		configInput(VOL_IN_6_INPUT, "Vol CV");
+		configInput(VOL_IN_7_INPUT, "Vol CV");
 
-		configInput(PAN_IN_1_INPUT, "Pan");
-		configInput(PAN_IN_2_INPUT, "Pan");
-		configInput(PAN_IN_3_INPUT, "Pan");
-		configInput(PAN_IN_4_INPUT, "Pan");
-		configInput(PAN_IN_5_INPUT, "Pan");
-		configInput(PAN_IN_6_INPUT, "Pan");
-		configInput(PAN_IN_7_INPUT, "Pan");
+		configInput(PAN_IN_1_INPUT, "Pan CV");
+		configInput(PAN_IN_2_INPUT, "Pan CV");
+		configInput(PAN_IN_3_INPUT, "Pan CV");
+		configInput(PAN_IN_4_INPUT, "Pan CV");
+		configInput(PAN_IN_5_INPUT, "Pan CV");
+		configInput(PAN_IN_6_INPUT, "Pan CV");
+		configInput(PAN_IN_7_INPUT, "Pan CV");
 
 		configOutput(OUT_L_OUTPUT, "Left");
 		configOutput(OUT_R_OUTPUT, "Right");
@@ -283,17 +283,17 @@ struct TL_MixesWidget : ModuleWidget {
 		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(90.795, 58.845)), module, TL_Mixes::LED_6_LIGHT));
 		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(108.438, 61.454)), module, TL_Mixes::LED_7_LIGHT));
 
-		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(44.653, 121.596)), module, TL_Mixes::L_VU_1_LIGHT));
-		addChild(createLightCentered<SmallLight<WhiteLight>>(mm2px(Vec(44.666, 119.364)), module, TL_Mixes::L_VU_2_LIGHT));
+		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(44.653, 121.596)), module, TL_Mixes::L_VU_1_LIGHT));
+		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(44.666, 119.364)), module, TL_Mixes::L_VU_2_LIGHT));
 		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(44.659, 116.826)), module, TL_Mixes::L_VU_3_LIGHT));
-		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(44.674, 113.645)), module, TL_Mixes::L_VU_4_LIGHT));
-		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(44.674, 109.922)), module, TL_Mixes::L_VU_5_LIGHT));
+		addChild(createLightCentered<SmallLight<WhiteLight>>(mm2px(Vec(44.674, 113.645)), module, TL_Mixes::L_VU_4_LIGHT));
+		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(44.674, 109.922)), module, TL_Mixes::L_VU_5_LIGHT));
 		
-		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(78.233, 121.58)), module, TL_Mixes::R_VU_1_LIGHT));
-		addChild(createLightCentered<SmallLight<WhiteLight>>(mm2px(Vec(78.246, 119.349)), module, TL_Mixes::R_VU_2_LIGHT));
+		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(78.233, 121.58)), module, TL_Mixes::R_VU_1_LIGHT));
+		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(78.246, 119.349)), module, TL_Mixes::R_VU_2_LIGHT));
 		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(78.239, 116.81)), module, TL_Mixes::R_VU_3_LIGHT));
-		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(78.254, 113.63)), module, TL_Mixes::R_VU_4_LIGHT));
-		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(78.254, 109.907)), module, TL_Mixes::R_VU_5_LIGHT));
+		addChild(createLightCentered<SmallLight<WhiteLight>>(mm2px(Vec(78.254, 113.63)), module, TL_Mixes::R_VU_4_LIGHT));
+		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(78.254, 109.907)), module, TL_Mixes::R_VU_5_LIGHT));
 	}
 };
 
