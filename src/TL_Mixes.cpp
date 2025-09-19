@@ -102,72 +102,85 @@ struct TL_Mixes : Module {
 
 	TL_Mixes() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-		configParam(CUT_4_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(CUT_3_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(CUT_5_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(CUT_2_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(CUT_6_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(CUT_1_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(CUT_7_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_4_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_3_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_5_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_2_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_6_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_1_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(PAN_7_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_4_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_3_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_5_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_2_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_6_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_1_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(VOL_7_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MUTE_4_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(SOLO_4_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(SOLO_3_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MUTE_5_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MUTE_3_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(SOLO_5_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(SOLO_2_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MUTE_6_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MUTE_2_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(SOLO_6_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(SOLO_1_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MUTE_1_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MUTE_7_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(SOLO_7_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MASTER_PARAM, 0.f, 1.f, 0.f, "");
-		configInput(L_IN_4_INPUT, "");
-		configInput(L_IN_3_INPUT, "");
-		configInput(L_IN_5_INPUT, "");
-		configInput(L_IN_2_INPUT, "");
-		configInput(L_IN_6_INPUT, "");
-		configInput(L_IN_1_INPUT, "");
-		configInput(L_IN_7_INPUT, "");
-		configInput(R_IN_4_INPUT, "");
-		configInput(R_IN_3_INPUT, "");
-		configInput(R_IN_5_INPUT, "");
-		configInput(R_IN_2_INPUT, "");
-		configInput(R_IN_6_INPUT, "");
-		configInput(R_IN_1_INPUT, "");
-		configInput(R_IN_7_INPUT, "");
-		configInput(VOL_IN_4_INPUT, "");
-		configInput(VOL_IN_3_INPUT, "");
-		configInput(VOL_IN_5_INPUT, "");
-		configInput(VOL_IN_2_INPUT, "");
-		configInput(VOL_IN_6_INPUT, "");
-		configInput(VOL_IN_1_INPUT, "");
-		configInput(VOL_IN_7_INPUT, "");
-		configInput(PAN_IN_4_INPUT, "");
-		configInput(PAN_IN_3_INPUT, "");
-		configInput(PAN_IN_5_INPUT, "");
-		configInput(PAN_IN_2_INPUT, "");
-		configInput(PAN_IN_6_INPUT, "");
-		configInput(PAN_IN_1_INPUT, "");
-		configInput(PAN_IN_7_INPUT, "");
-		configOutput(OUT_L_OUTPUT, "");
-		configOutput(OUT_R_OUTPUT, "");
+
+		static const std::vector<std::string> onoff_labels = {"Off", "On"};
+
+		configSwitch(CUT_1_PARAM, 0.f, 1.f, 0.f, "Cutoff", onoff_labels);
+		configSwitch(CUT_2_PARAM, 0.f, 1.f, 0.f, "Cutoff", onoff_labels);
+		configSwitch(CUT_3_PARAM, 0.f, 1.f, 0.f, "Cutoff", onoff_labels);
+		configSwitch(CUT_4_PARAM, 0.f, 1.f, 0.f, "Cutoff", onoff_labels);
+		configSwitch(CUT_5_PARAM, 0.f, 1.f, 0.f, "Cutoff", onoff_labels);
+		configSwitch(CUT_6_PARAM, 0.f, 1.f, 0.f, "Cutoff", onoff_labels);
+		configSwitch(CUT_7_PARAM, 0.f, 1.f, 0.f, "Cutoff", onoff_labels);
+
+		configParam(PAN_1_PARAM, -1.f, 1.f, 0.f, "Pan");
+		configParam(PAN_2_PARAM, -1.f, 1.f, 0.f, "Pan");
+		configParam(PAN_3_PARAM, -1.f, 1.f, 0.f, "Pan");
+		configParam(PAN_4_PARAM, -1.f, 1.f, 0.f, "Pan");
+		configParam(PAN_5_PARAM, -1.f, 1.f, 0.f, "Pan");
+		configParam(PAN_6_PARAM, -1.f, 1.f, 0.f, "Pan");
+		configParam(PAN_7_PARAM, -1.f, 1.f, 0.f, "Pan");
+
+		configParam(VOL_1_PARAM, 0.f, 10.f, 0.f, "Vol");
+		configParam(VOL_2_PARAM, 0.f, 10.f, 0.f, "Vol");
+		configParam(VOL_3_PARAM, 0.f, 10.f, 0.f, "Vol");
+		configParam(VOL_4_PARAM, 0.f, 10.f, 0.f, "Vol");
+		configParam(VOL_5_PARAM, 0.f, 10.f, 0.f, "Vol");
+		configParam(VOL_6_PARAM, 0.f, 10.f, 0.f, "Vol");
+		configParam(VOL_7_PARAM, 0.f, 10.f, 0.f, "Vol");
+
+		configSwitch(MUTE_1_PARAM, 0.f, 1.f, 0.f, "Mute", onoff_labels);
+		configSwitch(MUTE_2_PARAM, 0.f, 1.f, 0.f, "Mute", onoff_labels);
+		configSwitch(MUTE_3_PARAM, 0.f, 1.f, 0.f, "Mute", onoff_labels);
+		configSwitch(MUTE_4_PARAM, 0.f, 1.f, 0.f, "Mute", onoff_labels);
+		configSwitch(MUTE_5_PARAM, 0.f, 1.f, 0.f, "Mute", onoff_labels);
+		configSwitch(MUTE_6_PARAM, 0.f, 1.f, 0.f, "Mute", onoff_labels);
+		configSwitch(MUTE_7_PARAM, 0.f, 1.f, 0.f, "Mute", onoff_labels);
+		
+		configSwitch(SOLO_1_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
+		configSwitch(SOLO_2_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
+		configSwitch(SOLO_3_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
+		configSwitch(SOLO_4_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
+		configSwitch(SOLO_5_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
+		configSwitch(SOLO_6_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
+		configSwitch(SOLO_7_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
+
+		configParam(MASTER_PARAM, 0.f, 1.f, 0.f, "Master");
+
+		configInput(L_IN_1_INPUT, "L");
+		configInput(L_IN_2_INPUT, "L");
+		configInput(L_IN_3_INPUT, "L");
+		configInput(L_IN_4_INPUT, "L");
+		configInput(L_IN_5_INPUT, "L");
+		configInput(L_IN_6_INPUT, "L");
+		configInput(L_IN_7_INPUT, "L");
+
+		configInput(R_IN_1_INPUT, "R");
+		configInput(R_IN_2_INPUT, "R");
+		configInput(R_IN_3_INPUT, "R");
+		configInput(R_IN_4_INPUT, "R");
+		configInput(R_IN_5_INPUT, "R");
+		configInput(R_IN_6_INPUT, "R");
+		configInput(R_IN_7_INPUT, "R");
+
+		configInput(VOL_IN_1_INPUT, "Vol");
+		configInput(VOL_IN_2_INPUT, "Vol");
+		configInput(VOL_IN_3_INPUT, "Vol");
+		configInput(VOL_IN_4_INPUT, "Vol");
+		configInput(VOL_IN_5_INPUT, "Vol");
+		configInput(VOL_IN_6_INPUT, "Vol");
+		configInput(VOL_IN_7_INPUT, "Vol");
+
+		configInput(PAN_IN_1_INPUT, "Pan");
+		configInput(PAN_IN_2_INPUT, "Pan");
+		configInput(PAN_IN_3_INPUT, "Pan");
+		configInput(PAN_IN_4_INPUT, "Pan");
+		configInput(PAN_IN_5_INPUT, "Pan");
+		configInput(PAN_IN_6_INPUT, "Pan");
+		configInput(PAN_IN_7_INPUT, "Pan");
+
+		configOutput(OUT_L_OUTPUT, "Left");
+		configOutput(OUT_R_OUTPUT, "Right");
 	}
 
 	void process(const ProcessArgs& args) override {
