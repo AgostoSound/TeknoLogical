@@ -1,91 +1,51 @@
 #include "plugin.hpp"
 #include "../helpers/widgets/sliders.hpp"
+#include "rack.hpp"
+#include "dsp/digital.hpp"
+#include <array>
+#include <algorithm>
+#include <cmath>
 
+using namespace rack;
+
+// ===== Helper: simple first‑order high‑pass (per channel / per side) =====
+struct HP1 {
+	float a = 0.f; // coefficient
+	float y1 = 0.f; // y[n-1]
+	float x1 = 0.f; // x[n-1]
+	void setCutoff(float fc, float sampleRate) {
+		fc = std::max(1.f, fc);
+		float dt = 1.f / sampleRate;
+		float RC = 1.f / (2.f * float(M_PI) * fc);
+		a = RC / (RC + dt);
+	}
+	inline float process(float x) {
+		float y = a * (y1 + x - x1);
+		y1 = y;
+		x1 = x;
+		return y;
+	}
+	void reset(){ y1 = x1 = 0.f; }
+};
 
 struct TL_Mixes : Module {
 	enum ParamId {
-		CUT_1_PARAM,
-		CUT_2_PARAM,
-		CUT_3_PARAM,
-		CUT_4_PARAM,
-		CUT_5_PARAM,
-		CUT_6_PARAM,
-		CUT_7_PARAM,
-
-		PAN_1_PARAM,
-		PAN_2_PARAM,
-		PAN_3_PARAM,
-		PAN_4_PARAM,
-		PAN_5_PARAM,
-		PAN_6_PARAM,
-		PAN_7_PARAM,
-
-		VOL_1_PARAM,
-		VOL_2_PARAM,
-		VOL_3_PARAM,
-		VOL_4_PARAM,
-		VOL_5_PARAM,
-		VOL_6_PARAM,
-		VOL_7_PARAM,
-		
-		MUTE_1_PARAM,
-		MUTE_2_PARAM,
-		MUTE_3_PARAM,
-		MUTE_4_PARAM,
-		MUTE_5_PARAM,
-		MUTE_6_PARAM,
-		MUTE_7_PARAM,
-
-		SOLO_1_PARAM,
-		SOLO_2_PARAM,
-		SOLO_3_PARAM,
-		SOLO_4_PARAM,
-		SOLO_5_PARAM,
-		SOLO_6_PARAM,
-		SOLO_7_PARAM,
-
+		CUT_1_PARAM, CUT_2_PARAM, CUT_3_PARAM, CUT_4_PARAM, CUT_5_PARAM, CUT_6_PARAM, CUT_7_PARAM,
+		PAN_1_PARAM, PAN_2_PARAM, PAN_3_PARAM, PAN_4_PARAM, PAN_5_PARAM, PAN_6_PARAM, PAN_7_PARAM,
+		VOL_1_PARAM, VOL_2_PARAM, VOL_3_PARAM, VOL_4_PARAM, VOL_5_PARAM, VOL_6_PARAM, VOL_7_PARAM,
+		MUTE_1_PARAM, MUTE_2_PARAM, MUTE_3_PARAM, MUTE_4_PARAM, MUTE_5_PARAM, MUTE_6_PARAM, MUTE_7_PARAM,
+		SOLO_1_PARAM, SOLO_2_PARAM, SOLO_3_PARAM, SOLO_4_PARAM, SOLO_5_PARAM, SOLO_6_PARAM, SOLO_7_PARAM,
 		MASTER_PARAM,
 		PARAMS_LEN
 	};
 	enum InputId {
-		L_IN_1_INPUT,
-		L_IN_2_INPUT,
-		L_IN_3_INPUT,
-		L_IN_4_INPUT,
-		L_IN_5_INPUT,
-		L_IN_6_INPUT,
-		L_IN_7_INPUT,
-
-		R_IN_1_INPUT,
-		R_IN_2_INPUT,
-		R_IN_3_INPUT,
-		R_IN_4_INPUT,
-		R_IN_5_INPUT,
-		R_IN_6_INPUT,
-		R_IN_7_INPUT,
-
-		VOL_IN_1_INPUT,
-		VOL_IN_2_INPUT,
-		VOL_IN_3_INPUT,
-		VOL_IN_4_INPUT,
-		VOL_IN_5_INPUT,
-		VOL_IN_6_INPUT,
-		VOL_IN_7_INPUT,
-
-		PAN_IN_1_INPUT,
-		PAN_IN_2_INPUT,
-		PAN_IN_3_INPUT,
-		PAN_IN_4_INPUT,
-		PAN_IN_5_INPUT,
-		PAN_IN_6_INPUT,
-		PAN_IN_7_INPUT,
+		L_IN_1_INPUT, L_IN_2_INPUT, L_IN_3_INPUT, L_IN_4_INPUT, L_IN_5_INPUT, L_IN_6_INPUT, L_IN_7_INPUT,
+		R_IN_1_INPUT, R_IN_2_INPUT, R_IN_3_INPUT, R_IN_4_INPUT, R_IN_5_INPUT, R_IN_6_INPUT, R_IN_7_INPUT,
+		VOL_IN_1_INPUT, VOL_IN_2_INPUT, VOL_IN_3_INPUT, VOL_IN_4_INPUT, VOL_IN_5_INPUT, VOL_IN_6_INPUT, VOL_IN_7_INPUT,
+		PAN_IN_1_INPUT, PAN_IN_2_INPUT, PAN_IN_3_INPUT, PAN_IN_4_INPUT, PAN_IN_5_INPUT, PAN_IN_6_INPUT, PAN_IN_7_INPUT,
 		INPUTS_LEN
 	};
-	enum OutputId {
-		OUT_L_OUTPUT,
-		OUT_R_OUTPUT,
-		OUTPUTS_LEN
-	};
+	enum OutputId { OUT_L_OUTPUT, OUT_R_OUTPUT, OUTPUTS_LEN };
 	enum LightId {
 		LED_1_LIGHT, LED_2_LIGHT, LED_3_LIGHT, LED_4_LIGHT, LED_5_LIGHT, LED_6_LIGHT, LED_7_LIGHT,
 		L_VU_1_LIGHT, L_VU_2_LIGHT, L_VU_3_LIGHT, L_VU_4_LIGHT, L_VU_5_LIGHT,
@@ -95,11 +55,22 @@ struct TL_Mixes : Module {
 		LIGHTS_LEN
 	};
 
+	// ===== Runtime state =====
+	static constexpr int CH = 7;
+	// One HP per side per channel
+	HP1 hpL[CH];
+	HP1 hpR[CH];
+	// master meter smoothing
+	float vuL = 0.f, vuR = 0.f;
+	float sampleRate = 44100.f;
+
+	// fixed high‑pass cutoff for CUT ("quita graves")
+	float cutHz = 150.f;
+
 	TL_Mixes() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
 		static const std::vector<std::string> onoff_labels = {"Off", "On"};
-
 		configSwitch(CUT_1_PARAM, 0.f, 1.f, 0.f, "Cutoff", onoff_labels);
 		configSwitch(CUT_2_PARAM, 0.f, 1.f, 0.f, "Cutoff", onoff_labels);
 		configSwitch(CUT_3_PARAM, 0.f, 1.f, 0.f, "Cutoff", onoff_labels);
@@ -131,7 +102,7 @@ struct TL_Mixes : Module {
 		configSwitch(MUTE_5_PARAM, 0.f, 1.f, 0.f, "Mute", onoff_labels);
 		configSwitch(MUTE_6_PARAM, 0.f, 1.f, 0.f, "Mute", onoff_labels);
 		configSwitch(MUTE_7_PARAM, 0.f, 1.f, 0.f, "Mute", onoff_labels);
-		
+
 		configSwitch(SOLO_1_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
 		configSwitch(SOLO_2_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
 		configSwitch(SOLO_3_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
@@ -142,46 +113,168 @@ struct TL_Mixes : Module {
 
 		configParam(MASTER_PARAM, 0.f, 100.f, 0.f, "Master");
 
-		configInput(L_IN_1_INPUT, "L audio");
-		configInput(L_IN_2_INPUT, "L audio");
-		configInput(L_IN_3_INPUT, "L audio");
-		configInput(L_IN_4_INPUT, "L audio");
-		configInput(L_IN_5_INPUT, "L audio");
-		configInput(L_IN_6_INPUT, "L audio");
-		configInput(L_IN_7_INPUT, "L audio");
-
-		configInput(R_IN_1_INPUT, "R audio");
-		configInput(R_IN_2_INPUT, "R audio");
-		configInput(R_IN_3_INPUT, "R audio");
-		configInput(R_IN_4_INPUT, "R audio");
-		configInput(R_IN_5_INPUT, "R audio");
-		configInput(R_IN_6_INPUT, "R audio");
-		configInput(R_IN_7_INPUT, "R audio");
-
-		configInput(VOL_IN_1_INPUT, "Vol CV");
-		configInput(VOL_IN_2_INPUT, "Vol CV");
-		configInput(VOL_IN_3_INPUT, "Vol CV");
-		configInput(VOL_IN_4_INPUT, "Vol CV");
-		configInput(VOL_IN_5_INPUT, "Vol CV");
-		configInput(VOL_IN_6_INPUT, "Vol CV");
-		configInput(VOL_IN_7_INPUT, "Vol CV");
-
-		configInput(PAN_IN_1_INPUT, "Pan CV");
-		configInput(PAN_IN_2_INPUT, "Pan CV");
-		configInput(PAN_IN_3_INPUT, "Pan CV");
-		configInput(PAN_IN_4_INPUT, "Pan CV");
-		configInput(PAN_IN_5_INPUT, "Pan CV");
-		configInput(PAN_IN_6_INPUT, "Pan CV");
-		configInput(PAN_IN_7_INPUT, "Pan CV");
+		for (int i = 0; i < CH; ++i) {
+			configInput(L_IN_1_INPUT + i, "L audio");
+			configInput(R_IN_1_INPUT + i, "R audio");
+			configInput(VOL_IN_1_INPUT + i, "Vol CV");
+			configInput(PAN_IN_1_INPUT + i, "Pan CV");
+		}
 
 		configOutput(OUT_L_OUTPUT, "Left");
 		configOutput(OUT_R_OUTPUT, "Right");
 	}
 
+	void onSampleRateChange(const SampleRateChangeEvent& e) override {
+		Module::onSampleRateChange(e);
+		sampleRate = e.sampleRate;
+		for (int i = 0; i < CH; ++i) { hpL[i].setCutoff(cutHz, sampleRate); hpR[i].setCutoff(cutHz, sampleRate); }
+	}
+
+	void onReset(const ResetEvent& e) override {
+		Module::onReset(e);
+		vuL = vuR = 0.f;
+		for (int i = 0; i < CH; ++i) { hpL[i].reset(); hpR[i].reset(); }
+	}
+
+	// Equal‑power pan (mono source)
+	static inline void panMono(float in, float pan, float& l, float& r) {
+		// pan in [-1,1];
+		float theta = (pan * 0.5f + 0.5f) * (float)M_PI_2; // 0..PI/2
+		float gl = std::cos(theta);
+		float gr = std::sin(theta);
+		l += in * gl;
+		r += in * gr;
+	}
+
+	// Balance for stereo sources: pan<0 attenuates R, pan>0 attenuates L
+	static inline void balanceStereo(float& l, float& r, float pan) {
+		float theta = std::fabs(pan) * (float)M_PI_2; // 0..PI/2
+		float g = std::cos(theta); // equal‑power
+		if (pan > 0.f) l *= g; else if (pan < 0.f) r *= g;
+	}
+
+	// Simple soft limiter to ~±5 V using tanh
+	static inline float softLimit(float x) {
+		return 5.f * std::tanh(x / 5.f);
+	}
+
 	void process(const ProcessArgs& args) override {
+		// ensure HP is configured
+		if (args.sampleRate != sampleRate) {
+			sampleRate = args.sampleRate;
+			for (int i = 0; i < CH; ++i) { hpL[i].setCutoff(cutHz, sampleRate); hpR[i].setCutoff(cutHz, sampleRate); }
+		}
+
+		float mixL = 0.f;
+		float mixR = 0.f;
+
+		// Any SOLO active?
+		bool anySolo = false;
+		for (int c = 0; c < CH; ++c) anySolo |= (params[SOLO_1_PARAM + c].getValue() > 0.5f);
+
+		for (int c = 0; c < CH; ++c) {
+			// Status
+			bool cut = params[CUT_1_PARAM + c].getValue() > 0.5f;
+			bool mute = params[MUTE_1_PARAM + c].getValue() > 0.5f;
+			bool solo = params[SOLO_1_PARAM + c].getValue() > 0.5f;
+
+			// LEDs
+			lights[LED_1_LIGHT + c].setBrightness(cut ? 1.f : 0.f);
+			lights[MUTE_1_LED + c].setBrightness(mute ? 1.f : 0.f);
+			lights[SOLO_1_LED + c].setBrightness(solo ? 1.f : 0.f);
+
+			if (mute || (anySolo && !solo)) continue; // skip this channel in mix
+
+			// Inputs
+			bool lConn = inputs[L_IN_1_INPUT + c].isConnected();
+			bool rConn = inputs[R_IN_1_INPUT + c].isConnected();
+			float inL = lConn ? inputs[L_IN_1_INPUT + c].getVoltage() : 0.f;
+			float inR = rConn ? inputs[R_IN_1_INPUT + c].getVoltage() : 0.f;
+
+			// Mono/stereo behavior
+			if (!(lConn && rConn)) {
+				float mono = lConn ? inL : (rConn ? inR : 0.f);
+				inL = mono;
+				inR = mono;
+			}
+
+			// CUT (HP) per side when switch active
+			if (cut) {
+				inL = hpL[c].process(inL);
+				inR = hpR[c].process(inR);
+			}
+
+			// Volume — knob sets maximum, CV overrides absolute within 0..max
+			float volMax = clamp(params[VOL_1_PARAM + c].getValue() / 10.f, 0.f, 1.f);
+			float vol = volMax;
+			if (inputs[VOL_IN_1_INPUT + c].isConnected()) {
+				float v = clamp(inputs[VOL_IN_1_INPUT + c].getVoltage(), 0.f, 10.f) / 10.f; // 0..1
+				vol = volMax * v;
+			}
+
+			// Pan — CV fully overrides knob
+			float pan = params[PAN_1_PARAM + c].getValue(); // -1..1
+			if (inputs[PAN_IN_1_INPUT + c].isConnected()) {
+				pan = clamp(inputs[PAN_IN_1_INPUT + c].getVoltage() / 5.f, -1.f, 1.f);
+			}
+
+			// Apply per‑channel gain
+			inL *= vol;
+			inR *= vol;
+
+			// Apply panning only when the channel behaves as mono; if both inputs present, treat as balance
+			if (inputs[L_IN_1_INPUT + c].isConnected() && inputs[R_IN_1_INPUT + c].isConnected()) {
+				float l = inL, r = inR;
+				balanceStereo(l, r, pan);
+				mixL += l;
+				mixR += r;
+			}
+			else {
+				// mono -> stereo with equal‑power pan
+				float mono = 0.5f * (inL + inR);
+				panMono(mono, pan, mixL, mixR);
+			}
+		}
+
+		// Master gain
+		float master = clamp(params[MASTER_PARAM].getValue() / 100.f, 0.f, 1.f);
+		mixL *= master;
+		mixR *= master;
+
+		// Master limiter
+		float outL = softLimit(mixL);
+		float outR = softLimit(mixR);
+
+		// VU meters (post‑limiter)
+		float absL = std::fabs(outL);
+		float absR = std::fabs(outR);
+		// Fast attack / slow release
+		float atk = 0.6f, rel = 0.02f;
+		vuL = std::max(absL, vuL * (1.f - rel) + absL * rel);
+		vuR = std::max(absR, vuR * (1.f - rel) + absR * rel);
+
+		auto setVU = [&](float v, int baseLight) {
+			// thresholds relative to 5V FS
+			float fs = 5.f;
+			float t1 = 0.05f * fs; // lowest
+			float t2 = 0.12f * fs;
+			float t3 = 0.25f * fs;
+			float t4 = 0.50f * fs;
+			float t5 = 0.90f * fs; // near clip only
+			lights[baseLight + 0].setBrightness(v >= t1 ? 1.f : 0.f);
+			lights[baseLight + 1].setBrightness(v >= t2 ? 1.f : 0.f);
+			lights[baseLight + 2].setBrightness(v >= t3 ? 1.f : 0.f);
+			lights[baseLight + 3].setBrightness(v >= t4 ? 1.f : 0.f);
+			lights[baseLight + 4].setBrightness(v >= t5 ? 1.f : 0.f);
+		};
+		setVU(vuL, L_VU_1_LIGHT);
+		setVU(vuR, R_VU_1_LIGHT);
+
+		// Outputs
+		outputs[OUT_L_OUTPUT].setVoltage(outL);
+		outputs[OUT_R_OUTPUT].setVoltage(outR);
 	}
 };
-
 
 struct TL_MixesWidget : ModuleWidget {
 	TL_MixesWidget(TL_Mixes* module) {
