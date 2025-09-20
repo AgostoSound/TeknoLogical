@@ -1,74 +1,83 @@
 #include "plugin.hpp"
+#include "../helpers/widgets/sliders.hpp"
 
 
 struct TL_Mixes : Module {
 	enum ParamId {
-		CUT_4_PARAM,
-		CUT_3_PARAM,
-		CUT_5_PARAM,
-		CUT_2_PARAM,
-		CUT_6_PARAM,
 		CUT_1_PARAM,
+		CUT_2_PARAM,
+		CUT_3_PARAM,
+		CUT_4_PARAM,
+		CUT_5_PARAM,
+		CUT_6_PARAM,
 		CUT_7_PARAM,
-		PAN_4_PARAM,
-		PAN_3_PARAM,
-		PAN_5_PARAM,
-		PAN_2_PARAM,
-		PAN_6_PARAM,
+
 		PAN_1_PARAM,
+		PAN_2_PARAM,
+		PAN_3_PARAM,
+		PAN_4_PARAM,
+		PAN_5_PARAM,
+		PAN_6_PARAM,
 		PAN_7_PARAM,
-		VOL_4_PARAM,
-		VOL_3_PARAM,
-		VOL_5_PARAM,
-		VOL_2_PARAM,
-		VOL_6_PARAM,
+
 		VOL_1_PARAM,
+		VOL_2_PARAM,
+		VOL_3_PARAM,
+		VOL_4_PARAM,
+		VOL_5_PARAM,
+		VOL_6_PARAM,
 		VOL_7_PARAM,
-		MUTE_4_PARAM,
-		SOLO_4_PARAM,
-		SOLO_3_PARAM,
-		MUTE_5_PARAM,
-		MUTE_3_PARAM,
-		SOLO_5_PARAM,
-		SOLO_2_PARAM,
-		MUTE_6_PARAM,
-		MUTE_2_PARAM,
-		SOLO_6_PARAM,
-		SOLO_1_PARAM,
+		
 		MUTE_1_PARAM,
+		MUTE_2_PARAM,
+		MUTE_3_PARAM,
+		MUTE_4_PARAM,
+		MUTE_5_PARAM,
+		MUTE_6_PARAM,
 		MUTE_7_PARAM,
+
+		SOLO_1_PARAM,
+		SOLO_2_PARAM,
+		SOLO_3_PARAM,
+		SOLO_4_PARAM,
+		SOLO_5_PARAM,
+		SOLO_6_PARAM,
 		SOLO_7_PARAM,
+
 		MASTER_PARAM,
 		PARAMS_LEN
 	};
 	enum InputId {
-		L_IN_4_INPUT,
-		L_IN_3_INPUT,
-		L_IN_5_INPUT,
-		L_IN_2_INPUT,
-		L_IN_6_INPUT,
 		L_IN_1_INPUT,
+		L_IN_2_INPUT,
+		L_IN_3_INPUT,
+		L_IN_4_INPUT,
+		L_IN_5_INPUT,
+		L_IN_6_INPUT,
 		L_IN_7_INPUT,
-		R_IN_4_INPUT,
-		R_IN_3_INPUT,
-		R_IN_5_INPUT,
-		R_IN_2_INPUT,
-		R_IN_6_INPUT,
+
 		R_IN_1_INPUT,
+		R_IN_2_INPUT,
+		R_IN_3_INPUT,
+		R_IN_4_INPUT,
+		R_IN_5_INPUT,
+		R_IN_6_INPUT,
 		R_IN_7_INPUT,
-		VOL_IN_4_INPUT,
-		VOL_IN_3_INPUT,
-		VOL_IN_5_INPUT,
-		VOL_IN_2_INPUT,
-		VOL_IN_6_INPUT,
+
 		VOL_IN_1_INPUT,
+		VOL_IN_2_INPUT,
+		VOL_IN_3_INPUT,
+		VOL_IN_4_INPUT,
+		VOL_IN_5_INPUT,
+		VOL_IN_6_INPUT,
 		VOL_IN_7_INPUT,
-		PAN_IN_4_INPUT,
-		PAN_IN_3_INPUT,
-		PAN_IN_5_INPUT,
-		PAN_IN_2_INPUT,
-		PAN_IN_6_INPUT,
+
 		PAN_IN_1_INPUT,
+		PAN_IN_2_INPUT,
+		PAN_IN_3_INPUT,
+		PAN_IN_4_INPUT,
+		PAN_IN_5_INPUT,
+		PAN_IN_6_INPUT,
 		PAN_IN_7_INPUT,
 		INPUTS_LEN
 	};
@@ -78,23 +87,9 @@ struct TL_Mixes : Module {
 		OUTPUTS_LEN
 	};
 	enum LightId {
-		LED_4_LIGHT,
-		LED_3_LIGHT,
-		LED_5_LIGHT,
-		LED_2_LIGHT,
-		LED_6_LIGHT,
-		LED_1_LIGHT,
-		LED_7_LIGHT,
-		L_VU_5_LIGHT,
-		R_VU_5_LIGHT,
-		L_VU_4_LIGHT,
-		R_VU_4_LIGHT,
-		L_VU_3_LIGHT,
-		R_VU_3_LIGHT,
-		L_VU_2_LIGHT,
-		R_VU_2_LIGHT,
-		L_VU_1_LIGHT,
-		R_VU_1_LIGHT,
+		LED_1_LIGHT, LED_2_LIGHT, LED_3_LIGHT, LED_4_LIGHT, LED_5_LIGHT, LED_6_LIGHT, LED_7_LIGHT,
+		L_VU_1_LIGHT, L_VU_2_LIGHT, L_VU_3_LIGHT, L_VU_4_LIGHT, L_VU_5_LIGHT,
+		R_VU_1_LIGHT, R_VU_2_LIGHT, R_VU_3_LIGHT, R_VU_4_LIGHT, R_VU_5_LIGHT,
 		MUTE_1_LED, MUTE_2_LED, MUTE_3_LED, MUTE_4_LED, MUTE_5_LED, MUTE_6_LED, MUTE_7_LED,
 		SOLO_1_LED, SOLO_2_LED, SOLO_3_LED, SOLO_4_LED, SOLO_5_LED, SOLO_6_LED, SOLO_7_LED,
 		LIGHTS_LEN
@@ -145,7 +140,7 @@ struct TL_Mixes : Module {
 		configSwitch(SOLO_6_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
 		configSwitch(SOLO_7_PARAM, 0.f, 1.f, 0.f, "Solo", onoff_labels);
 
-		configParam(MASTER_PARAM, 0.f, 1.f, 0.f, "Master");
+		configParam(MASTER_PARAM, 0.f, 100.f, 0.f, "Master");
 
 		configInput(L_IN_1_INPUT, "L audio");
 		configInput(L_IN_2_INPUT, "L audio");
@@ -206,13 +201,13 @@ struct TL_MixesWidget : ModuleWidget {
 		addParam(createParamCentered<NKK>(mm2px(Vec(96.012, 61.92)), module, TL_Mixes::CUT_6_PARAM));
 		addParam(createParamCentered<NKK>(mm2px(Vec(113.655, 64.528)), module, TL_Mixes::CUT_7_PARAM));
 
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(8.666, 78.383)), module, TL_Mixes::PAN_1_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(25.838, 75.731)), module, TL_Mixes::PAN_2_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(43.915, 73.073)), module, TL_Mixes::PAN_3_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(61.056, 70.948)), module, TL_Mixes::PAN_4_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(78.67, 73.011)), module, TL_Mixes::PAN_5_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(95.981, 75.647)), module, TL_Mixes::PAN_6_PARAM));
-		addParam(createParamCentered<Trimpot>(mm2px(Vec(113.624, 78.256)), module, TL_Mixes::PAN_7_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(8.566, 78.383)), module, TL_Mixes::PAN_1_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(25.738, 75.831)), module, TL_Mixes::PAN_2_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(43.815, 73.173)), module, TL_Mixes::PAN_3_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(60.956, 71.048)), module, TL_Mixes::PAN_4_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(78.57, 73.111)), module, TL_Mixes::PAN_5_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(95.881, 75.847)), module, TL_Mixes::PAN_6_PARAM));
+		addParam(createParamCentered<Trimpot>(mm2px(Vec(113.524, 78.456)), module, TL_Mixes::PAN_7_PARAM));
 
 		addParam(createParamCentered<Rogan1PWhite>(mm2px(Vec(8.635, 91.752)), module, TL_Mixes::VOL_1_PARAM));
 		addParam(createParamCentered<Rogan1PWhite>(mm2px(Vec(25.807, 89.1)), module, TL_Mixes::VOL_2_PARAM));
@@ -238,7 +233,7 @@ struct TL_MixesWidget : ModuleWidget {
 		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(100.297, 102.544)), module, TL_Mixes::SOLO_6_PARAM, TL_Mixes::SOLO_6_LED));
 		addParam(createLightParamCentered<VCVLightLatch<MediumSimpleLight<BlueLight>>>(mm2px(Vec(117.257, 105.27)), module, TL_Mixes::SOLO_7_PARAM, TL_Mixes::SOLO_7_LED));
 
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(61.085, 107.963)), module, TL_Mixes::MASTER_PARAM));
+		addParam(createParamCentered<SmallHSlider>(mm2px(rack::math::Vec(61.085, 107.963)), module, TL_Mixes::MASTER_PARAM));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.565, 22.44)), module, TL_Mixes::L_IN_1_INPUT));
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(25.738, 19.788)), module, TL_Mixes::L_IN_2_INPUT));
