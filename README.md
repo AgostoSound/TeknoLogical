@@ -2,9 +2,6 @@
 
 **TeknoLogical** is a collection of **VCV Rack 2** modules for live minimal techno.
 
-<<<<<<< HEAD
-Each module is a tool focused on generating and developing rhythmic and melodic patterns through sequencing, tone generation, and randomization, allowing for complete performances with minimal external dependencies.
-=======
 <img width="1903" height="736" alt="Captura de pantalla 2025-09-20 152329" src="https://github.com/user-attachments/assets/2fc52c79-6d2f-42ea-b83c-bc501c90ce39" />
 
 **TeknoLogical** is a collection of **VCV Rack 2** modules designed for live minimal techno performance.
@@ -18,7 +15,6 @@ These modules are toward a specific sonic aesthetic—**a consistent, minimal te
 The direction of this project is not driven by a desire for maximum flexibility or versatility. Instead, the focus is on musical constraint, immediacy, and coherence—qualities I find essential for live techno performance.
 
 **TeknoLogical** tries to be something different: a minimal instrument for a focused purpose.
->>>>>>> e8f32f2 (Update README.md)
 
 ---
 
@@ -27,11 +23,8 @@ The direction of this project is not driven by a desire for maximum flexibility 
 - [TL-Drum5](docs/TL-Drum5.md) – 5-Voice Polyphonic Drum Machine.
 - [TL-Seq4](docs/TL-Seq4.md) – 4-8-16 Dual channel step sequencer.
 - [TL-Reseter](docs/TL-Reseter.md) – Dual channel reset expander.
-<<<<<<< HEAD
-=======
 - [TL-Bass](docs/TL-Bass.md) – Bass trigger.
 - [TL-Mixes](docs/TL-Mixes.md) – 7-channel stereo mixer with cutoff.
->>>>>>> e8f32f2 (Update README.md)
 
 
 ## 📥 Installation
