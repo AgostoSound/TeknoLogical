@@ -2,7 +2,7 @@
 
 <img width="309" height="124" alt="tecnologo" src="https://github.com/user-attachments/assets/8c090297-3238-41ae-8a1e-a2d54ca1af6a" />
 
-<img width="1864" height="900" alt="Captura de pantalla 2025-09-17 225011" src="https://github.com/user-attachments/assets/6339b8a1-acb2-4165-b02e-fb52211948f4" />
+<img width="1903" height="736" alt="Captura de pantalla 2025-09-20 152329" src="https://github.com/user-attachments/assets/2fc52c79-6d2f-42ea-b83c-bc501c90ce39" />
 
 **TeknoLogical** is a collection of **VCV Rack 2** modules designed for live minimal techno performance.
 
@@ -24,6 +24,8 @@ The direction of this project is not driven by a desire for maximum flexibility 
 - [TL-Seq4](docs/TL-Seq4.md) – 4-8-16 Dual channel step sequencer.
 - [TL-Reseter](docs/TL-Reseter.md) – Dual channel reset expander.
 - [TL-Bass](docs/TL-Bass.md) – Bass trigger.
+- [TL-Mixes](docs/TL-Mixes.md) – 7-channel stereo mixer with cutoff.
+
 
 ## 📥 Installation
 
