@@ -1,7 +1,6 @@
 #include "plugin.hpp"
 #include "../helpers/widgets/sliders.hpp"
 
-
 struct TL_LowF : Module {
 	enum ParamId {
 		// General controls
@@ -45,37 +44,146 @@ struct TL_LowF : Module {
 		LIGHTS_LEN
 	};
 
+	float phase = 0.f;
+
 	TL_LowF() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
 		// General controls
-		configParam(AMP_KNOB_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(FREQ_KNOB_PARAM, 0.f, 1.f, 0.f, "");
+		configParam(FREQ_KNOB_PARAM, -8.f, 10.f, 1.f, "Frequency", " Hz", 2.f, 1.f);
+
+		// AMP is peak amplitude in volts, 0..5V, default 2.5V (center/up position)
+		configParam(AMP_KNOB_PARAM, 0.f, 5.f, 2.5f, "Amplitude", " V");
 
 		// Multipliers
-		configParam(MULTIPLO1_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MULTIPLO2_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MULTIPLO3_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(MULTIPLO4_PARAM, 0.f, 1.f, 0.f, "");
+		configSwitch(MULTIPLO1_PARAM, 0.f, 2.f, 0.f, "Multiplier 1", {"x1", "x2", "x3"});
+		configSwitch(MULTIPLO2_PARAM, 0.f, 2.f, 0.f, "Multiplier 2", {"x1", "x2", "x3"});
+		configSwitch(MULTIPLO3_PARAM, 0.f, 2.f, 0.f, "Multiplier 3", {"x1", "x2", "x3"});
+		configSwitch(MULTIPLO4_PARAM, 0.f, 2.f, 0.f, "Multiplier 4", {"x1", "x2", "x3"});
 
 		// Waves
-		configParam(ONDA1_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(ONDA2_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(ONDA3_PARAM, 0.f, 1.f, 0.f, "");
-		configParam(ONDA4_PARAM, 0.f, 1.f, 0.f, "");
+		configSwitch(ONDA1_PARAM, 0.f, 2.f, 0.f, "Wave 1", {"Sine", "Triangle", "Square"});
+		configSwitch(ONDA2_PARAM, 0.f, 2.f, 0.f, "Wave 2", {"Sine", "Triangle", "Square"});
+		configSwitch(ONDA3_PARAM, 0.f, 2.f, 0.f, "Wave 3", {"Sine", "Triangle", "Square"});
+		configSwitch(ONDA4_PARAM, 0.f, 2.f, 0.f, "Wave 4", {"Sine", "Triangle", "Square"});
 
 		// Inputs
-		configInput(AMP_CV_INPUT, "");
-		configInput(FREQ_CV_INPUT, "");
+		configInput(AMP_CV_INPUT, "Amplitude CV");
+		configInput(FREQ_CV_INPUT, "Frequency CV");
 
 		// Outputs
-		configOutput(OUT1_OUTPUT, "");
-		configOutput(OUT2_OUTPUT, "");
-		configOutput(OUT3_OUTPUT, "");
-		configOutput(OUT4_OUTPUT, "");
+		configOutput(OUT1_OUTPUT, "Channel 1");
+		configOutput(OUT2_OUTPUT, "Channel 2");
+		configOutput(OUT3_OUTPUT, "Channel 3");
+		configOutput(OUT4_OUTPUT, "Channel 4");
 	}
 
+	static float triangleWave(float p) {
+		// p in [0, 1)
+		// output in [-1, 1]
+		return 1.f - 4.f * std::fabs(p - 0.5f);
+	}
+
+	static float squareWave(float p) {
+		return (p < 0.5f) ? 1.f : -1.f;
+	}
+
+	static float sineWave(float p) {
+		return std::sin(2.f * M_PI * p);
+	}
+
+	static float evalWave(int waveType, float p) {
+		switch (waveType) {
+			case 0:  return sineWave(p);
+			case 1:  return triangleWave(p);
+			case 2:  return squareWave(p);
+			default: return sineWave(p);
+		}
+	}
+
+	// Main cycle.
 	void process(const ProcessArgs& args) override {
+		// Frequency control
+		// If CV is connected, ignore knob.
+		float freqControl;
+		if (inputs[FREQ_CV_INPUT].isConnected()) {
+			// 0..10V mapped to -8..10, same full travel as knob
+			float cv = clamp(inputs[FREQ_CV_INPUT].getVoltage(), 0.f, 10.f);
+			freqControl = rescale(cv, 0.f, 10.f, -8.f, 10.f);
+		}
+		else {
+			freqControl = params[FREQ_KNOB_PARAM].getValue();
+		}
+
+		float baseFreq = std::pow(2.f, freqControl);
+		baseFreq = clamp(baseFreq, 0.f, 1024.f);
+
+		// Amplitude control
+		// If CV is connected, ignore knob.
+		float amplitude;
+		if (inputs[AMP_CV_INPUT].isConnected()) {
+			// 0..10V mapped to 0..5V
+			float cv = clamp(inputs[AMP_CV_INPUT].getVoltage(), 0.f, 10.f);
+			amplitude = rescale(cv, 0.f, 10.f, 0.f, 5.f);
+		}
+		else {
+			amplitude = params[AMP_KNOB_PARAM].getValue();
+		}
+		amplitude = clamp(amplitude, 0.f, 5.f);
+
+		// Advance master phase with base frequency
+		phase += baseFreq * args.sampleTime;
+		phase -= std::floor(phase);
+
+		// Read stepped params
+		int mults[4] = {
+			(int) std::round(params[MULTIPLO1_PARAM].getValue()) + 1,
+			(int) std::round(params[MULTIPLO2_PARAM].getValue()) + 1,
+			(int) std::round(params[MULTIPLO3_PARAM].getValue()) + 1,
+			(int) std::round(params[MULTIPLO4_PARAM].getValue()) + 1
+		};
+
+		int waves[4] = {
+			(int) std::round(params[ONDA1_PARAM].getValue()),
+			(int) std::round(params[ONDA2_PARAM].getValue()),
+			(int) std::round(params[ONDA3_PARAM].getValue()),
+			(int) std::round(params[ONDA4_PARAM].getValue())
+		};
+
+		const float phaseOffsets[4] = {
+			0.00f,  //   0°
+			0.25f,  //  90°
+			0.50f,  // 180°
+			0.75f   // 270°
+		};
+
+		Output* outs[4] = {
+			&outputs[OUT1_OUTPUT],
+			&outputs[OUT2_OUTPUT],
+			&outputs[OUT3_OUTPUT],
+			&outputs[OUT4_OUTPUT]
+		};
+
+		Light* leds[4] = {
+			&lights[LED1_LIGHT],
+			&lights[LED2_LIGHT],
+			&lights[LED3_LIGHT],
+			&lights[LED4_LIGHT]
+		};
+
+		for (int i = 0; i < 4; i++) {
+			float p = phase * mults[i] + phaseOffsets[i];
+			p -= std::floor(p);
+
+			float wave = evalWave(waves[i], p);     // [-1, 1]
+			float out = wave * amplitude;           // bipolar, peak = amplitude
+
+			outs[i]->setVoltage(out);
+
+			// LED:
+			float ledBrightness = clamp(std::fabs(out) / 5.f, 0.f, 1.f);
+			leds[i]->setBrightnessSmooth(ledBrightness, args.sampleTime);
+		}
 	}
 };
 
