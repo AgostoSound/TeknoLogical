@@ -1,6 +1,6 @@
 # TL-LowF
 
-<img width="1880" height="697" alt="TL-LowF" src="https://github.com/user-attachments/assets/778ff262-2037-4067-a99c-ea0050b1794c" />
+<img width="340" height="959" alt="lowf" src="https://github.com/user-attachments/assets/9a91fdc4-a0e1-4741-a25f-8e306b498f27" />
 
 A **4-channel quadrature LFO** for VCV Rack. Each output is phase-shifted **90°** from the previous one, with **per-channel wave selection** and **frequency multiplier** controls. Designed to animate filters, VCAs, panning, and modulation targets with coordinated motion from a single master rate.
 
