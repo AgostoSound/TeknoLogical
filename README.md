@@ -2,7 +2,7 @@
 
 <img width="309" height="124" alt="tecnologo" src="https://github.com/user-attachments/assets/8c090297-3238-41ae-8a1e-a2d54ca1af6a" />
 
-<img width="1890" height="516" alt="Screenshot 2026-02-15 120842" src="https://github.com/user-attachments/assets/ff8e0396-a0cb-4fe8-bddd-0dd13bbfb8c2" />
+<img width="1485" height="1068" alt="Screenshot 2026-04-05 181041" src="https://github.com/user-attachments/assets/447c3d31-0c44-447a-b15f-6c6c6223271e" />
 
 ## Overview
 
