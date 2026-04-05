@@ -23,28 +23,6 @@ Each input drives its own meter independently.
 
 ---
 
-## Outputs
-
-TL-VuLR has **no outputs**.  
-It is a pure monitoring module.
-
----
-
-## Indicators
-
-- **Left LED meter** – Shows the level of the **L** input.
-- **Right LED meter** – Shows the level of the **R** input.
-
-Each side uses **14 LED segments**:
-
-- **LED 1** = lowest visible level
-- **LED 14** = highest level / near full-scale Eurorack audio peak
-
-Higher input voltage lights more segments.  
-Low levels light only the lower LEDs, while stronger signals climb toward the top.
-
----
-
 ## Notes
 
 - TL-VuLR reads the **absolute signal level**, so both positive and negative waveform peaks contribute to the display.
