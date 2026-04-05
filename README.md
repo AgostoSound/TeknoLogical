@@ -26,6 +26,8 @@ This project favors **musical constraint, immediacy, and coherence**—qualities
 - [TL-Odd5](docs/TL-Odd5.md) – Triple odd-step voltage sequencer.
 - [TL-Bool](docs/TL-Bool.md) – Dual-input logic gate processor with probability.
 - [TL-Pump](docs/TL-Pump.md) – Sidechain-style stereo ducker with selectable pump curves.
+- [TL-LowF](docs/TL-LowF.md) – Quad-phase control LFO with waves and multipliers.
+
 
 
 
