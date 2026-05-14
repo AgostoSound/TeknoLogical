@@ -47,6 +47,21 @@ struct TL_Shape : Module {
 		LIGHTS_LEN
 	};
 
+	enum EnvStage {
+		IDLE_STAGE,
+		ATTACK_STAGE,
+		DECAY_STAGE,
+		SUSTAIN_STAGE,
+		RELEASE_STAGE
+	};
+
+	EnvStage envStage = IDLE_STAGE;
+
+	float env = 0.f;
+	float releaseStart = 0.f;
+
+	dsp::SchmittTrigger gateTrigger;
+
 	TL_Shape() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
 
@@ -54,7 +69,7 @@ struct TL_Shape : Module {
 		configParam(DECAY_PARAM, 0.f, 1.f, 0.f, "Decay");
 		configParam(SUSTAIN_PARAM, 0.f, 1.f, 0.f, "Sustain");
 		configParam(RELEASE_PARAM, 0.f, 1.f, 0.f, "Release");
-		configParam(TRIGGER_PARAM, 0.f, 1.f, 0.f, "Trigger");
+		configButton(TRIGGER_PARAM, "Trigger");
 		configParam(VOL_PARAM, 0.f, 1.f, 0.f, "Volume");
 
 		configInput(TRIG_CV_INPUT, "Trigger");
@@ -67,7 +82,128 @@ struct TL_Shape : Module {
 		configOutput(R_OUT_OUTPUT, "Right audio");
 	}
 
+	float knobToTime(float value, float minTime = 0.001f, float maxTime = 10.f) {
+		return minTime * std::pow(maxTime / minTime, value);
+	}
+
+	void startRelease() {
+		if (envStage != RELEASE_STAGE && envStage != IDLE_STAGE) {
+			releaseStart = env;
+			envStage = RELEASE_STAGE;
+		}
+	}
+
+	void processEnvelope(const ProcessArgs& args) {
+		const float attackTime = knobToTime(params[ATTACK_PARAM].getValue());
+		const float decayTime = knobToTime(params[DECAY_PARAM].getValue());
+		const float sustainLevel = params[SUSTAIN_PARAM].getValue();
+		const float releaseTime = knobToTime(params[RELEASE_PARAM].getValue());
+
+		const bool manualGate = params[TRIGGER_PARAM].getValue() > 0.5f;
+		const bool inputGate = inputs[TRIG_CV_INPUT].isConnected() && inputs[TRIG_CV_INPUT].getVoltage() >= 1.f;
+		const bool gate = manualGate || inputGate;
+
+		if (gateTrigger.process(gate ? 10.f : 0.f)) {
+			envStage = ATTACK_STAGE;
+		}
+
+		if (!gate && envStage != IDLE_STAGE) {
+			startRelease();
+		}
+
+		switch (envStage) {
+			case IDLE_STAGE: {
+				env = 0.f;
+			} break;
+
+			case ATTACK_STAGE: {
+				env += args.sampleTime / attackTime;
+
+				if (env >= 1.f) {
+					env = 1.f;
+					envStage = DECAY_STAGE;
+				}
+			} break;
+
+			case DECAY_STAGE: {
+				env -= args.sampleTime * (1.f - sustainLevel) / decayTime;
+
+				if (env <= sustainLevel) {
+					env = sustainLevel;
+					envStage = SUSTAIN_STAGE;
+				}
+			} break;
+
+			case SUSTAIN_STAGE: {
+				env = sustainLevel;
+			} break;
+
+			case RELEASE_STAGE: {
+				env -= args.sampleTime * releaseStart / releaseTime;
+
+				if (env <= 0.f) {
+					env = 0.f;
+					envStage = IDLE_STAGE;
+				}
+			} break;
+		}
+
+		env = clamp(env, 0.f, 1.f);
+
+		outputs[CV_OUT_OUTPUT].setVoltage(env * 10.f);
+
+		lights[TRIGGER_PARAM_LED].setBrightnessSmooth(gate ? 1.f : 0.f, args.sampleTime);
+	}
+
+	void processVca() {
+		const float cv = inputs[CV_IN_INPUT].isConnected()
+			? clamp(inputs[CV_IN_INPUT].getVoltage() / 10.f, 0.f, 1.f)
+			: 0.f;
+
+		const float volume = params[VOL_PARAM].getValue();
+		const float gain = cv * volume;
+
+		float left = 0.f;
+		float right = 0.f;
+
+		const bool leftConnected = inputs[L_IN_INPUT].isConnected();
+		const bool rightConnected = inputs[R_IN_INPUT].isConnected();
+
+		if (leftConnected && rightConnected) {
+			left = inputs[L_IN_INPUT].getVoltage();
+			right = inputs[R_IN_INPUT].getVoltage();
+		}
+		else if (leftConnected) {
+			left = inputs[L_IN_INPUT].getVoltage();
+			right = left;
+		}
+		else if (rightConnected) {
+			right = inputs[R_IN_INPUT].getVoltage();
+			left = right;
+		}
+
+		outputs[L_OUT_OUTPUT].setVoltage(left * gain);
+		outputs[R_OUT_OUTPUT].setVoltage(right * gain);
+	}
+
+	void processLights(const ProcessArgs& args) {
+		const float level = inputs[CV_IN_INPUT].isConnected()
+			? clamp(inputs[CV_IN_INPUT].getVoltage() / 10.f, 0.f, 1.f)
+			: env;
+
+		for (int i = 0; i < 7; i++) {
+			const float threshold = (float) (i + 1) / 7.f;
+			const float brightness = level >= threshold ? 1.f : 0.f;
+
+			lights[L_LED_1_LIGHT + i * 2].setBrightnessSmooth(brightness, args.sampleTime);
+			lights[R_LED_1_LIGHT + i * 2].setBrightnessSmooth(brightness, args.sampleTime);
+		}
+	}
+
 	void process(const ProcessArgs& args) override {
+		processEnvelope(args);
+		processVca();
+		processLights(args);
 	}
 };
 
@@ -89,8 +225,8 @@ struct TL_ShapeWidget : ModuleWidget {
 		addParam(createParamCentered<MiniVSlider>(mm2px(Vec(25.379, 27.073)), module, TL_Shape::RELEASE_PARAM));
 
 		// Trigger / CV envelope
-		addParam(createLightParamCentered<VCVLightButton<LargeSimpleLight<WhiteLight>>>(mm2px(Vec(15.253, 36.213)), 
-		module, TL_Shape::TRIGGER_PARAM, TL_Shape::TRIGGER_PARAM_LED));
+		addParam(createLightParamCentered<VCVLightButton<LargeSimpleLight<WhiteLight>>>(mm2px(Vec(15.253, 36.213)),
+			module, TL_Shape::TRIGGER_PARAM, TL_Shape::TRIGGER_PARAM_LED));
 
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.37, 46.928)), module, TL_Shape::TRIG_CV_INPUT));
 		addOutput(createOutputCentered<DarkPJ301MPort>(mm2px(Vec(15.308, 62.866)), module, TL_Shape::CV_OUT_OUTPUT));
