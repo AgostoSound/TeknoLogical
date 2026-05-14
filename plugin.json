@@ -107,7 +107,19 @@
         "Oscillator",
         "Quad"
       ]
+    },
+    {
+      "slug": "TL_Shape",
+      "name": "TL_Shape",
+      "description": "ADSR + VCA",
+      "tags": [
+        "Dual",
+        "Dynamics",
+        "Envelope generator",
+        "Voltage-controlled amplifier"
+      ]
     }
+
 
 
   ]
