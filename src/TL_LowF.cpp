@@ -45,9 +45,13 @@ struct TL_LowF : Module {
 	};
 
 	float phase = 0.f;
+	dsp::ClockDivider lightDivider;
+
+	static constexpr int LIGHT_DIVISION = 16;
 
 	TL_LowF() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
+		lightDivider.setDivision(LIGHT_DIVISION);
 
 		// General controls
 		configParam(FREQ_KNOB_PARAM, -8.f, 10.f, 1.f, "Frequency", " Hz", 2.f, 1.f);
@@ -78,21 +82,21 @@ struct TL_LowF : Module {
 		configOutput(OUT4_OUTPUT, "Channel 4");
 	}
 
-	static float triangleWave(float p) {
+	static inline float triangleWave(float p) {
 		// p in [0, 1)
 		// output in [-1, 1]
 		return 1.f - 4.f * std::fabs(p - 0.5f);
 	}
 
-	static float squareWave(float p) {
+	static inline float squareWave(float p) {
 		return (p < 0.5f) ? 1.f : -1.f;
 	}
 
-	static float sineWave(float p) {
+	static inline float sineWave(float p) {
 		return std::sin(2.f * M_PI * p);
 	}
 
-	static float evalWave(int waveType, float p) {
+	static inline float evalWave(int waveType, float p) {
 		switch (waveType) {
 			case 0:  return sineWave(p);
 			case 1:  return triangleWave(p);
@@ -109,14 +113,15 @@ struct TL_LowF : Module {
 		if (inputs[FREQ_CV_INPUT].isConnected()) {
 			// 0..10V mapped to -8..10, same full travel as knob
 			float cv = clamp(inputs[FREQ_CV_INPUT].getVoltage(), 0.f, 10.f);
-			freqControl = rescale(cv, 0.f, 10.f, -8.f, 10.f);
+			freqControl = cv * 1.8f - 8.f;
 		}
 		else {
 			freqControl = params[FREQ_KNOB_PARAM].getValue();
 		}
 
-		float baseFreq = std::pow(2.f, freqControl);
-		baseFreq = clamp(baseFreq, 0.f, 1024.f);
+		float baseFreq = dsp::exp2_taylor5(freqControl);
+		if (baseFreq > 1024.f)
+			baseFreq = 1024.f;
 
 		// Amplitude control
 		// If CV is connected, ignore knob.
@@ -124,65 +129,76 @@ struct TL_LowF : Module {
 		if (inputs[AMP_CV_INPUT].isConnected()) {
 			// 0..10V mapped to 0..5V
 			float cv = clamp(inputs[AMP_CV_INPUT].getVoltage(), 0.f, 10.f);
-			amplitude = rescale(cv, 0.f, 10.f, 0.f, 5.f);
+			amplitude = cv * 0.5f;
 		}
 		else {
 			amplitude = params[AMP_KNOB_PARAM].getValue();
 		}
-		amplitude = clamp(amplitude, 0.f, 5.f);
-
 		// Advance master phase with base frequency
 		phase += baseFreq * args.sampleTime;
-		phase -= std::floor(phase);
+		if (phase >= 1.f)
+			phase -= std::floor(phase);
+		const bool updateLights = lightDivider.process();
+
+		static constexpr int outputIds[4] = {
+			OUT1_OUTPUT,
+			OUT2_OUTPUT,
+			OUT3_OUTPUT,
+			OUT4_OUTPUT
+		};
+
+		static constexpr int ledIds[4] = {
+			LED1_LIGHT,
+			LED2_LIGHT,
+			LED3_LIGHT,
+			LED4_LIGHT
+		};
+
+		if (amplitude <= 0.f) {
+			for (int i = 0; i < 4; i++) {
+				outputs[outputIds[i]].setVoltage(0.f);
+				if (updateLights)
+					lights[ledIds[i]].setBrightnessSmooth(0.f, args.sampleTime * LIGHT_DIVISION);
+			}
+			return;
+		}
 
 		// Read stepped params
 		int mults[4] = {
-			(int) std::round(params[MULTIPLO1_PARAM].getValue()) + 1,
-			(int) std::round(params[MULTIPLO2_PARAM].getValue()) + 1,
-			(int) std::round(params[MULTIPLO3_PARAM].getValue()) + 1,
-			(int) std::round(params[MULTIPLO4_PARAM].getValue()) + 1
+			(int) (params[MULTIPLO1_PARAM].getValue() + 0.5f) + 1,
+			(int) (params[MULTIPLO2_PARAM].getValue() + 0.5f) + 1,
+			(int) (params[MULTIPLO3_PARAM].getValue() + 0.5f) + 1,
+			(int) (params[MULTIPLO4_PARAM].getValue() + 0.5f) + 1
 		};
 
 		int waves[4] = {
-			(int) std::round(params[ONDA1_PARAM].getValue()),
-			(int) std::round(params[ONDA2_PARAM].getValue()),
-			(int) std::round(params[ONDA3_PARAM].getValue()),
-			(int) std::round(params[ONDA4_PARAM].getValue())
+			(int) (params[ONDA1_PARAM].getValue() + 0.5f),
+			(int) (params[ONDA2_PARAM].getValue() + 0.5f),
+			(int) (params[ONDA3_PARAM].getValue() + 0.5f),
+			(int) (params[ONDA4_PARAM].getValue() + 0.5f)
 		};
 
-		const float phaseOffsets[4] = {
+		static constexpr float phaseOffsets[4] = {
 			0.00f,  //   0°
 			0.25f,  //  90°
 			0.50f,  // 180°
 			0.75f   // 270°
 		};
 
-		Output* outs[4] = {
-			&outputs[OUT1_OUTPUT],
-			&outputs[OUT2_OUTPUT],
-			&outputs[OUT3_OUTPUT],
-			&outputs[OUT4_OUTPUT]
-		};
-
-		Light* leds[4] = {
-			&lights[LED1_LIGHT],
-			&lights[LED2_LIGHT],
-			&lights[LED3_LIGHT],
-			&lights[LED4_LIGHT]
-		};
-
 		for (int i = 0; i < 4; i++) {
 			float p = phase * mults[i] + phaseOffsets[i];
-			p -= std::floor(p);
+			p -= (int) p;
 
 			float wave = evalWave(waves[i], p);     // [-1, 1]
 			float out = wave * amplitude;           // bipolar, peak = amplitude
 
-			outs[i]->setVoltage(out);
+			outputs[outputIds[i]].setVoltage(out);
 
 			// LED:
-			float ledBrightness = clamp(std::fabs(out) / 5.f, 0.f, 1.f);
-			leds[i]->setBrightnessSmooth(ledBrightness, args.sampleTime);
+			if (updateLights) {
+				float ledBrightness = std::fabs(out) * 0.2f;
+				lights[ledIds[i]].setBrightnessSmooth(ledBrightness, args.sampleTime * LIGHT_DIVISION);
+			}
 		}
 	}
 };
