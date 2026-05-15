@@ -57,9 +57,15 @@ struct TL_Shape : Module {
 
 	EnvStage envStage = IDLE_STAGE;
 
+	float attackTime = 0.001f;
+	float decayTime = 0.001f;
 	float env = 0.f;
 	float releaseStart = 0.f;
+	float releaseTime = 0.001f;
+	float sustainLevel = 0.f;
 
+	dsp::ClockDivider controlDivider;
+	dsp::ClockDivider lightDivider;
 	dsp::SchmittTrigger gateTrigger;
 
 	TL_Shape() {
@@ -70,16 +76,19 @@ struct TL_Shape : Module {
 		configParam(SUSTAIN_PARAM, 0.f, 1.f, 0.f, "Sustain");
 		configParam(RELEASE_PARAM, 0.f, 1.f, 0.f, "Release");
 		configButton(TRIGGER_PARAM, "Trigger");
-		configParam(VOL_PARAM, 0.f, 1.f, 0.f, "Volume");
+		configParam(VOL_PARAM, 0.f, 1.f, 1.f, "Volume", "%", 0.f, 100.f);
 
 		configInput(TRIG_CV_INPUT, "Trigger");
-		configInput(CV_IN_INPUT, "CV");
+		configInput(CV_IN_INPUT, "VCA CV");
 		configInput(L_IN_INPUT, "Left audio");
 		configInput(R_IN_INPUT, "Right audio");
 
-		configOutput(CV_OUT_OUTPUT, "CV");
+		configOutput(CV_OUT_OUTPUT, "Envelope CV");
 		configOutput(L_OUT_OUTPUT, "Left audio");
 		configOutput(R_OUT_OUTPUT, "Right audio");
+
+		controlDivider.setDivision(64);
+		lightDivider.setDivision(512);
 	}
 
 	float knobToTime(float value, float minTime = 0.001f, float maxTime = 10.f) {
@@ -94,10 +103,12 @@ struct TL_Shape : Module {
 	}
 
 	void processEnvelope(const ProcessArgs& args) {
-		const float attackTime = knobToTime(params[ATTACK_PARAM].getValue());
-		const float decayTime = knobToTime(params[DECAY_PARAM].getValue());
-		const float sustainLevel = params[SUSTAIN_PARAM].getValue();
-		const float releaseTime = knobToTime(params[RELEASE_PARAM].getValue());
+		if (controlDivider.process()) {
+			attackTime = knobToTime(params[ATTACK_PARAM].getValue());
+			decayTime = knobToTime(params[DECAY_PARAM].getValue());
+			releaseTime = knobToTime(params[RELEASE_PARAM].getValue());
+			sustainLevel = params[SUSTAIN_PARAM].getValue();
+		}
 
 		const bool manualGate = params[TRIGGER_PARAM].getValue() > 0.5f;
 		const bool inputGate = inputs[TRIG_CV_INPUT].isConnected() && inputs[TRIG_CV_INPUT].getVoltage() >= 1.f;
@@ -151,14 +162,12 @@ struct TL_Shape : Module {
 		env = clamp(env, 0.f, 1.f);
 
 		outputs[CV_OUT_OUTPUT].setVoltage(env * 10.f);
-
-		lights[TRIGGER_PARAM_LED].setBrightnessSmooth(gate ? 1.f : 0.f, args.sampleTime);
 	}
 
 	void processVca() {
 		const float cv = inputs[CV_IN_INPUT].isConnected()
 			? clamp(inputs[CV_IN_INPUT].getVoltage() / 10.f, 0.f, 1.f)
-			: 0.f;
+			: 1.f;
 
 		const float volume = params[VOL_PARAM].getValue();
 		const float gain = cv * volume;
@@ -187,16 +196,28 @@ struct TL_Shape : Module {
 	}
 
 	void processLights(const ProcessArgs& args) {
+		if (!lightDivider.process()) {
+			return;
+		}
+
+		const float deltaTime = args.sampleTime * 512.f;
+
 		const float level = inputs[CV_IN_INPUT].isConnected()
 			? clamp(inputs[CV_IN_INPUT].getVoltage() / 10.f, 0.f, 1.f)
 			: env;
+
+		const bool manualGate = params[TRIGGER_PARAM].getValue() > 0.5f;
+		const bool inputGate = inputs[TRIG_CV_INPUT].isConnected() && inputs[TRIG_CV_INPUT].getVoltage() >= 1.f;
+		const bool gate = manualGate || inputGate;
+
+		lights[TRIGGER_PARAM_LED].setBrightnessSmooth(gate ? 1.f : 0.f, deltaTime);
 
 		for (int i = 0; i < 7; i++) {
 			const float threshold = (float) (i + 1) / 7.f;
 			const float brightness = level >= threshold ? 1.f : 0.f;
 
-			lights[L_LED_1_LIGHT + i * 2].setBrightnessSmooth(brightness, args.sampleTime);
-			lights[R_LED_1_LIGHT + i * 2].setBrightnessSmooth(brightness, args.sampleTime);
+			lights[L_LED_1_LIGHT + i * 2].setBrightnessSmooth(brightness, deltaTime);
+			lights[R_LED_1_LIGHT + i * 2].setBrightnessSmooth(brightness, deltaTime);
 		}
 	}
 
@@ -231,7 +252,7 @@ struct TL_ShapeWidget : ModuleWidget {
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(15.37, 46.928)), module, TL_Shape::TRIG_CV_INPUT));
 		addOutput(createOutputCentered<DarkPJ301MPort>(mm2px(Vec(15.308, 62.866)), module, TL_Shape::CV_OUT_OUTPUT));
 
-		// CV VCA
+		// VCA
 		addInput(createInputCentered<PJ301MPort>(mm2px(Vec(8.348, 80.471)), module, TL_Shape::CV_IN_INPUT));
 		addParam(createParamCentered<Rogan1PWhite>(mm2px(Vec(22.11, 80.54)), module, TL_Shape::VOL_PARAM));
 
