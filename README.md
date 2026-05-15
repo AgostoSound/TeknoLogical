@@ -28,6 +28,7 @@ This project favors **musical constraint, immediacy, and coherence**—qualities
 - [TL-Pump](docs/TL-Pump.md) – Sidechain-style stereo ducker with selectable pump curves.
 - [TL-VuLR](docs/TL-VuLR.md) – Stereo VU Meter.
 - [TL-LowF](docs/TL-LowF.md) – Quad-phase control LFO with waves and multipliers.
+- [TL-Shape](docs/TL-Shape.md) – ADSR envelope generator with stereo VCA.
 
 
 
