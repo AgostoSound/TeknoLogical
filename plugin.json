@@ -1,7 +1,7 @@
 {
   "slug": "TeknoLogical",
   "name": "TeknoLogical",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "license": "GPL-3.0-or-later",
   "brand": "TeknoLogical",
   "author": "AgostoSound",
@@ -112,8 +112,16 @@
         "Envelope generator",
         "Voltage-controlled amplifier"
       ]
+    },
+    {
+      "slug": "TL_Deck",
+      "name": "TL_Deck",
+      "description": "Stereo stem player for synced playback.",
+      "tags": [
+        "Sampler",
+        "Visual"
+      ]
     }
-
 
 
   ]
