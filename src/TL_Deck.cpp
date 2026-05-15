@@ -1,7 +1,9 @@
 #include "plugin.hpp"
 #include "rack.hpp"
 #include "dsp/digital.hpp"
+#include <algorithm>
 #include <atomic>
+#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -53,6 +55,7 @@ struct TL_Deck : Module {
 
 	std::shared_ptr<SampleData> sampleData;
 	std::string samplePath;
+	std::vector<float> waveformPeak;
 
 	dsp::SchmittTrigger playButtonTrigger;
 	dsp::SchmittTrigger playCvTrigger;
@@ -77,6 +80,34 @@ struct TL_Deck : Module {
 
 		configOutput(L_OUT_OUTPUT, "Left Out");
 		configOutput(R_OUT_OUTPUT, "Right Out");
+	}
+
+	void buildWaveformCache() {
+		waveformPeak.clear();
+
+		auto data = std::atomic_load(&sampleData);
+		if (!data || data->left.empty())
+			return;
+
+		const int visualSize = 2048;
+		waveformPeak.resize(visualSize, 0.f);
+
+		const size_t totalSamples = data->left.size();
+
+		for (int i = 0; i < visualSize; i++) {
+			size_t start = (size_t)((double)i / visualSize * totalSamples);
+			size_t end = (size_t)((double)(i + 1) / visualSize * totalSamples);
+			end = std::min(end, totalSamples);
+
+			float peak = 0.f;
+
+			for (size_t j = start; j < end; j++) {
+				float mono = 0.5f * (std::fabs(data->left[j]) + std::fabs(data->right[j]));
+				peak = std::max(peak, mono);
+			}
+
+			waveformPeak[i] = peak;
+		}
 	}
 
 	bool loadWavFile(const std::string& path) {
@@ -109,6 +140,9 @@ struct TL_Deck : Module {
 		samplePath = path;
 		playing = false;
 		playhead = 0.0;
+
+		buildWaveformCache();
+
 		return true;
 	}
 
@@ -262,6 +296,82 @@ struct LoadWavButton : VCVLightButton<LargeSimpleLight<WhiteLight>> {
 	}
 };
 
+struct DeckWaveformDisplay : TransparentWidget {
+	TL_Deck* module = nullptr;
+
+	DeckWaveformDisplay(TL_Deck* module, Vec pos, Vec size) {
+		this->module = module;
+		box.pos = pos;
+		box.size = size;
+	}
+
+	void draw(const DrawArgs& args) override {
+		// Background
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, 0.f, 0.f, box.size.x, box.size.y);
+		nvgFillColor(args.vg, nvgRGB(4, 12, 16));
+		nvgFill(args.vg);
+
+		// Border
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, 0.5f, 0.5f, box.size.x - 1.f, box.size.y - 1.f);
+		nvgStrokeColor(args.vg, nvgRGB(0, 180, 210));
+		nvgStrokeWidth(args.vg, 1.f);
+		nvgStroke(args.vg);
+
+		if (!module || module->waveformPeak.empty())
+			return;
+
+		const float centerY = box.size.y * 0.5f;
+		const float centerX = box.size.x * 0.5f;
+		const float halfWidth = box.size.x * 0.42f;
+
+		float current = 0.f;
+		float total = 1.f;
+
+		auto data = std::atomic_load(&module->sampleData);
+		if (data && !data->left.empty()) {
+			current = (float)module->playhead;
+			total = (float)data->left.size();
+		}
+
+		const float currentNorm = clamp(current / total, 0.f, 1.f);
+		const int cacheSize = (int)module->waveformPeak.size();
+
+		// Visible vertical window around current playback position.
+		const float visibleNorm = 0.08f;
+
+		nvgBeginPath(args.vg);
+
+		for (int y = 0; y < (int)box.size.y; y++) {
+			float relY = (centerY - y) / box.size.y;
+			float sampleNorm = currentNorm + relY * visibleNorm;
+			sampleNorm = clamp(sampleNorm, 0.f, 1.f);
+
+			int index = clamp((int)(sampleNorm * (cacheSize - 1)), 0, cacheSize - 1);
+			float peak = module->waveformPeak[index];
+
+			float x1 = centerX - peak * halfWidth;
+			float x2 = centerX + peak * halfWidth;
+
+			nvgMoveTo(args.vg, x1, y);
+			nvgLineTo(args.vg, x2, y);
+		}
+
+		nvgStrokeColor(args.vg, nvgRGB(0, 220, 255));
+		nvgStrokeWidth(args.vg, 1.f);
+		nvgStroke(args.vg);
+
+		// Current playback line
+		nvgBeginPath(args.vg);
+		nvgMoveTo(args.vg, 0.f, centerY);
+		nvgLineTo(args.vg, box.size.x, centerY);
+		nvgStrokeColor(args.vg, nvgRGB(255, 255, 255));
+		nvgStrokeWidth(args.vg, 1.f);
+		nvgStroke(args.vg);
+	}
+};
+
 struct TL_DeckWidget : ModuleWidget {
 	struct LoadWavItem : MenuItem {
 		TL_Deck* module = nullptr;
@@ -281,8 +391,8 @@ struct TL_DeckWidget : ModuleWidget {
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 2 * RACK_GRID_WIDTH, RACK_GRID_HEIGHT - RACK_GRID_WIDTH)));
 
 		addParam(createParamCentered<Rogan1PWhite>(mm2px(Vec(22.498, 60.696)), module, TL_Deck::KNOB_VOL_PARAM));
-		addParam(createParamCentered<RoundBlackKnob>(mm2px(Vec(15.274, 36.399)), module, TL_Deck::SCREEN_PARAM));
 
+		addChild(new DeckWaveformDisplay(module, mm2px(Vec(8.52, 21.13)), mm2px(Vec(13.47, 30.24))));
 
 		auto* loadButton = createLightParamCentered<LoadWavButton>(
 			mm2px(Vec(15.115, 83.198)),
