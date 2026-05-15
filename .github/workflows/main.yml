@@ -7,9 +7,6 @@ on:
     branches: [cross-compiling]
   workflow_dispatch:
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     name: build (${{ matrix.os }})
@@ -22,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up SDK based on OS
         shell: bash
@@ -46,7 +43,7 @@ jobs:
         run: make RACK_DIR="$RACK_DIR" $BUILD_FLAGS
 
       - name: Archive build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.os }}-plugin
           path: |
