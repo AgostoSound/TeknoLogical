@@ -1,6 +1,7 @@
 # TL-Shape
 
-<img width="176" height="762" alt="TL-Shape panel" src="../res/TL_Shape.svg" />
+<img width="227" height="963" alt="Screenshot 2026-05-15 131725" src="https://github.com/user-attachments/assets/34e102dc-d7c2-4404-a743-4fbad4df1c57" />
+
 
 A **compact ADSR envelope generator with a built-in stereo VCA** for VCV Rack 2.  
 TL-Shape creates a 0-10 V envelope from a trigger or gate, then provides a simple stereo audio shaping stage for controlling level, accents, and gated movement.
