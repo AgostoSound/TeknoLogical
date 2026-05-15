@@ -1,7 +1,7 @@
 # TeknoLogical Module Collection
 
 <img width="309" height="124" alt="tecnologo" src="https://github.com/user-attachments/assets/8c090297-3238-41ae-8a1e-a2d54ca1af6a" />
-<img width="1429" height="1047" alt="Screenshot 2026-04-05 181315" src="https://github.com/user-attachments/assets/1d10b25d-0a40-4b98-9e79-2558d2409601" />
+<img width="1406" height="1045" alt="Screenshot 2026-05-15 132013" src="https://github.com/user-attachments/assets/32ac993f-f5f5-40d1-b38a-f921e57412d1" />
 
 
 ## Overview
