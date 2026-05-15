@@ -1,8 +1,8 @@
 # TeknoLogical Module Collection
 
 <img width="309" height="124" alt="tecnologo" src="https://github.com/user-attachments/assets/8c090297-3238-41ae-8a1e-a2d54ca1af6a" />
+<img width="1501" height="1067" alt="Screenshot 2026-05-15 132516" src="https://github.com/user-attachments/assets/8a79b775-fabd-44dd-8e3d-17325d8784b5" />
 
-<img width="1890" height="516" alt="Screenshot 2026-02-15 120842" src="https://github.com/user-attachments/assets/ff8e0396-a0cb-4fe8-bddd-0dd13bbfb8c2" />
 
 ## Overview
 
@@ -26,6 +26,11 @@ This project favors **musical constraint, immediacy, and coherence**—qualities
 - [TL-Odd5](docs/TL-Odd5.md) – Triple odd-step voltage sequencer.
 - [TL-Bool](docs/TL-Bool.md) – Dual-input logic gate processor with probability.
 - [TL-Pump](docs/TL-Pump.md) – Sidechain-style stereo ducker with selectable pump curves.
+- [TL-VuLR](docs/TL-VuLR.md) – Stereo VU Meter.
+- [TL-LowF](docs/TL-LowF.md) – Quad-phase control LFO with waves and multipliers.
+- [TL-Shape](docs/TL-Shape.md) – ADSR envelope generator with stereo VCA.
+
+
 
 
 

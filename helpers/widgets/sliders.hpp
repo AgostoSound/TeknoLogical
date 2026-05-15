@@ -67,4 +67,38 @@ struct SmallHSliderBool : rack::app::SvgSlider {
   }
 };
 
+struct MiniVSlider : rack::app::SvgSlider {
+  MiniVSlider(float margin = 1.0f) {
+    auto bg = APP->window->loadSvg(asset::plugin(pluginInstance, "res/custom_components/MiniSliderVertical-bg.svg"));
+    auto hd = APP->window->loadSvg(asset::plugin(pluginInstance, "res/custom_components/MiniSliderVertical-handler.svg"));
+    setBackgroundSvg(bg);
+    setHandleSvg(hd);
 
+    box.size = background->box.size;
+    if (box.size.isZero())
+      box.size = rack::math::Vec(12.2f, 40.85f);
+
+    const float W = box.size.x;
+    const float H = box.size.y;
+    const float hh = handle ? handle->box.size.y : W * 0.45f;
+
+    setHandlePosCentered(
+      rack::math::Vec(W * 0.5f, H - margin - hh * 0.5f),
+      rack::math::Vec(W * 0.5f, margin + hh * 0.5f)
+    );
+
+    horizontal = false;
+
+    // Debug border
+    struct DebugBorder : rack::widget::Widget {
+      void draw(const DrawArgs& args) override {
+        nvgBeginPath(args.vg);
+        nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+        nvgStrokeWidth(args.vg, 1.f);
+        nvgStrokeColor(args.vg, nvgRGBA(255, 0, 0, 200));
+        nvgStroke(args.vg);
+      }
+    };
+    addChild(new DebugBorder);
+  }
+};
