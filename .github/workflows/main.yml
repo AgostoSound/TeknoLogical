@@ -2,43 +2,54 @@ name: Build VCV Rack Plugin
 
 on:
   push:
-    branches: [ cross-compiling ]
+    branches: [cross-compiling]
   pull_request:
-    branches: [ cross-compiling ]
+    branches: [cross-compiling]
   workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
+    name: build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]  # Windows excluido aquí
+        os: [ubuntu-latest, macos-latest]
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up SDK based on OS
-      run: |
-        if [[ "$RUNNER_OS" == "Linux" ]]; then
-          unzip .github/sdk/Rack-SDK-2.4.1-lin-x64.zip
-          echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
-        elif [[ "$RUNNER_OS" == "macOS" ]]; then
-          unzip .github/sdk/Rack-SDK-2.4.1-mac-x64.zip
-          echo "RACK_DIR=$PWD/Rack-SDK" >> $GITHUB_ENV
-        fi
-        echo "BUILD_FLAGS=-j$(nproc || sysctl -n hw.ncpu)" >> $GITHUB_ENV
-      shell: bash
+      - name: Set up SDK based on OS
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            unzip -q .github/sdk/Rack-SDK-2.4.1-lin-x64.zip
+            echo "RACK_DIR=$PWD/Rack-SDK" >> "$GITHUB_ENV"
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            unzip -q .github/sdk/Rack-SDK-2.4.1-mac-x64.zip
+            echo "RACK_DIR=$PWD/Rack-SDK" >> "$GITHUB_ENV"
+          fi
 
-    - name: Build plugin
-      run: make RACK_DIR=$RACK_DIR $BUILD_FLAGS
-      shell: bash
+          if command -v nproc >/dev/null 2>&1; then
+            echo "BUILD_FLAGS=-j$(nproc)" >> "$GITHUB_ENV"
+          else
+            echo "BUILD_FLAGS=-j$(sysctl -n hw.ncpu)" >> "$GITHUB_ENV"
+          fi
 
-    - name: Archive build
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.os }}-plugin
-        path: |
-          plugin.dylib
-          plugin.so
-        if-no-files-found: ignore
+      - name: Build plugin
+        shell: bash
+        run: make RACK_DIR="$RACK_DIR" $BUILD_FLAGS
+
+      - name: Archive build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-plugin
+          path: |
+            plugin.dylib
+            plugin.so
+          if-no-files-found: ignore
