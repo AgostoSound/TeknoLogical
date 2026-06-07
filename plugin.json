@@ -127,6 +127,16 @@
         "Sampler",
         "Visual"
       ]
+    },
+    {
+      "slug": "TL_Treex",
+      "name": "TL-Treex",
+      "description": "3 channel stereo mixer.",
+      "tags": [
+        "Filter",
+        "Mixer",
+        "Panning"
+      ]
     }
 
 
