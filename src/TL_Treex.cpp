@@ -355,17 +355,17 @@ struct TL_TreexWidget : ModuleWidget {
 		addChild(createLightCentered<TinyLight<WhiteLight>>(P(55.87, 43.033), module, TL_Treex::LED_2_LIGHT));
 		addChild(createLightCentered<TinyLight<WhiteLight>>(P(76.129, 45.096), module, TL_Treex::LED_3_LIGHT));
 
-		addChild(createLightCentered<TinyLight<WhiteLight>>(P(9.6, 115.7), module, TL_Treex::L_VU_1_LIGHT));
-		addChild(createLightCentered<TinyLight<WhiteLight>>(P(15.1, 115.7), module, TL_Treex::L_VU_2_LIGHT));
-		addChild(createLightCentered<TinyLight<WhiteLight>>(P(20.5, 115.7), module, TL_Treex::L_VU_3_LIGHT));
-		addChild(createLightCentered<SmallLight<WhiteLight>>(P(26.3, 115.7), module, TL_Treex::L_VU_4_LIGHT));
-		addChild(createLightCentered<MediumLight<WhiteLight>>(P(33.0, 115.7), module, TL_Treex::L_VU_5_LIGHT));
+		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(5.024, 111.013)), module, TL_Treex::L_VU_1_LIGHT));
+		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(7.263, 110.844)), module, TL_Treex::L_VU_2_LIGHT));
+		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(9.795, 110.639)), module, TL_Treex::L_VU_3_LIGHT));
+		addChild(createLightCentered<SmallLight<WhiteLight>>(mm2px(Vec(12.955, 110.414)), module, TL_Treex::L_VU_4_LIGHT));
+		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(16.666, 110.125)), module, TL_Treex::L_VU_5_LIGHT));
 
-		addChild(createLightCentered<TinyLight<WhiteLight>>(P(112.7, 115.7), module, TL_Treex::R_VU_1_LIGHT));
-		addChild(createLightCentered<TinyLight<WhiteLight>>(P(107.2, 115.7), module, TL_Treex::R_VU_2_LIGHT));
-		addChild(createLightCentered<TinyLight<WhiteLight>>(P(101.8, 115.7), module, TL_Treex::R_VU_3_LIGHT));
-		addChild(createLightCentered<SmallLight<WhiteLight>>(P(96.0, 115.7), module, TL_Treex::R_VU_4_LIGHT));
-		addChild(createLightCentered<MediumLight<WhiteLight>>(P(89.3, 115.7), module, TL_Treex::R_VU_5_LIGHT));
+		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(55.819, 110.918)), module, TL_Treex::R_VU_1_LIGHT));
+		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(53.493, 110.708)), module, TL_Treex::R_VU_2_LIGHT));
+		addChild(createLightCentered<TinyLight<WhiteLight>>(mm2px(Vec(51.043, 110.485)), module, TL_Treex::R_VU_3_LIGHT));
+		addChild(createLightCentered<SmallLight<WhiteLight>>(mm2px(Vec(47.879, 110.198)), module, TL_Treex::R_VU_4_LIGHT));
+		addChild(createLightCentered<MediumLight<WhiteLight>>(mm2px(Vec(44.123, 109.849)), module, TL_Treex::R_VU_5_LIGHT));
 	}
 };
 
