@@ -22,3 +22,4 @@ extern Model* modelTL_LowF;
 extern Model* modelTL_Shape;
 extern Model* modelTL_Deck;
 extern Model* modelTL_Treex;
+extern Model* modelTL_Static;
