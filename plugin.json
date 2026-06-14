@@ -1,7 +1,7 @@
 {
   "slug": "TeknoLogical",
   "name": "TeknoLogical",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "license": "GPL-3.0-or-later",
   "brand": "TeknoLogical",
   "author": "AgostoSound",
@@ -120,6 +120,25 @@
       "tags": [
         "Sampler",
         "Visual"
+      ]
+    },
+    {
+      "slug": "TL_Treex",
+      "name": "TL-Treex",
+      "description": "3 channel stereo mixer.",
+      "tags": [
+        "Filter",
+        "Mixer",
+        "Panning"
+      ]
+    },
+    {
+      "slug": "TL_Static",
+      "name": "TL_Static",
+      "description": "Four noise colors with XY mixing and Filter",
+      "tags": [
+        "Noise",
+        "Filter"
       ]
     }
 

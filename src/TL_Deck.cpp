@@ -346,10 +346,11 @@ struct DeckWaveformDisplay : TransparentWidget {
 		for (int y = 0; y < (int)box.size.y; y++) {
 			float relY = (centerY - y) / box.size.y;
 			float sampleNorm = currentNorm + relY * visibleNorm;
-			sampleNorm = clamp(sampleNorm, 0.f, 1.f);
-
-			int index = clamp((int)(sampleNorm * (cacheSize - 1)), 0, cacheSize - 1);
-			float peak = module->waveformPeak[index];
+			float peak = 0.f;
+			if (sampleNorm >= 0.f && sampleNorm <= 1.f) {
+				int index = clamp((int)(sampleNorm * (cacheSize - 1)), 0, cacheSize - 1);
+				peak = module->waveformPeak[index];
+			}
 
 			float x1 = centerX - peak * halfWidth;
 			float x2 = centerX + peak * halfWidth;

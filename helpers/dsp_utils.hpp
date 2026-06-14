@@ -8,6 +8,13 @@ using namespace rack;
 
 namespace DSPUtils {
 
+    struct QuadMixWeights {
+        float topLeft = 0.f;
+        float topRight = 0.f;
+        float bottomLeft = 0.f;
+        float bottomRight = 0.f;
+    };
+
     // Small helper: checks if two floats differ more than epsilon.
     inline bool changedEnough(float a, float b, float eps = 1e-4f) {
         return std::fabs(a - b) > eps;
@@ -262,6 +269,21 @@ namespace DSPUtils {
     inline float resolvePanMinus1to1(float knobMinus1to1, bool cvConnected, float cvVoltsPlusMinus5) {
         if (!cvConnected) return clamp(knobMinus1to1, -1.f, 1.f);
         return clamp(cvVoltsPlusMinus5 / 5.f, -1.f, 1.f);
+    }
+
+    // Bilinear corner weights for a normalized XY pad.
+    inline QuadMixWeights bilinearMixWeights(float x01, float y01) {
+        float x = clamp(x01, 0.f, 1.f);
+        float y = clamp(y01, 0.f, 1.f);
+        float invX = 1.f - x;
+        float invY = 1.f - y;
+
+        QuadMixWeights weights;
+        weights.topLeft = invX * invY;
+        weights.topRight = x * invY;
+        weights.bottomLeft = invX * y;
+        weights.bottomRight = x * y;
+        return weights;
     }
 
 }
