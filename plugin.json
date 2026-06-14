@@ -1,7 +1,7 @@
 {
   "slug": "TeknoLogical",
   "name": "TeknoLogical",
-  "version": "2.0.8",
+  "version": "2.1.0",
   "license": "GPL-3.0-or-later",
   "brand": "TeknoLogical",
   "author": "AgostoSound",
@@ -48,9 +48,10 @@
     {
       "slug": "TL_Bass",
       "name": "TL_Bass",
-      "description": "Automatic bass trigger.",
+      "description": "Trigger-driven bass voice.",
       "tags": [
-        "Sampler"
+        "Synthesizer",
+        "Oscillator"
       ]
     },
     {

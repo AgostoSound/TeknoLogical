@@ -1,9 +1,9 @@
-#include <iostream>
 #include <tuple>
 #include "plugin.hpp"
 #include "rack.hpp"
 #include "dsp/filter.hpp"
 #include "../helpers/dsp_utils.hpp"
+#include "dsp/sample_player.hpp"
 #include "../res/samples/kick.h"
 #include "../res/samples/snare.h"
 #include "../res/samples/clap.h"
@@ -78,53 +78,7 @@ struct TL_Drum5 : Module {
 // --------------------   Set initial values  ------------------------------------
     dsp::SchmittTrigger trigKick, trigClap, trigSnare, trigClosedHat, trigOpenHat;
 
-	// Represents a single voice that plays a short audio sample.
-	struct Voice {
-		const int16_t* sample = nullptr;  // Pointer to the audio sample data.
-		int length = 0;  // Length of the sample.
-		float pos = 0.f;  // Current playback position (floating point for interpolation).
-		
-		// How much to advance 'pos' each step (depends on sample rate).
-		float stepSize = 1.f;  // OriginalSample: 48000 kHz / currentSampleRateVCV.
-		bool playing = false;
-
-		// Called on each audio frame to advance playback and get the next sample.
-		float step() {
-			if (!playing || pos >= length - 1)  // If not playing or reached the end of the sample, return silence.
-				return 0.f;
-
-			int i0 = (int)pos;  // Get the two nearest sample points for interpolation.
-			int i1 = i0 + 1;
-
-			if (i1 >= length)  // Clamp to avoid reading out of bounds.
-				i1 = length - 1;
-
-			float frac = pos - i0;  // Compute linear interpolation factor.
-			
-			// Convert int16 samples to float in range [-1.0, 1.0].
-			float s0 = (float)sample[i0] / 32768.f;
-			float s1 = (float)sample[i1] / 32768.f;
-
-			float out = s0 + (s1 - s0) * frac;  // Linear interpolation between s0 and s1.
-
-			pos += stepSize;  // Advance position.
-			if (pos >= length)  // If reached end, stop playing.
-				playing = false;
-
-			return out;
-		}
-
-		// Starts playback of a new sample.
-		void trigger(const int16_t* s, int len, float currentSampleRate) {
-			sample = s;  // Set sample buffer.
-			length = len;  // Set buffer length.
-			pos = 0.f;  // Reset position to start.
-			stepSize = 48000.f / currentSampleRate;  // Adjust for host sample rate.
-			playing = true;  // Enable playback.
-	}
-	};
-
-    Voice kick, clap, snare, closedHat, openHat;
+	TeknoDSP::Int16SampleVoice kick, clap, snare, closedHat, openHat;
 	DSPUtils::CachedLowPass kickLowFilter, clapLowFilter, snareLowFilter, closedHatLowFilter, openHatLowFilter;
 	DSPUtils::CachedHighPass kickHighFilter, clapHighFilter, snareHighFilter, closedHatHighFilter, openHatHighFilter;
 
@@ -199,10 +153,10 @@ struct TL_Drum5 : Module {
 // --------------------   Functions  ---------------------------------------------
 
 	// Process per channel.
-	std::tuple<float, float> processChannel(float trigger_in, float vol_in, float push_in, float filter_in, float decay_in, 
-										float link_in, dsp::SchmittTrigger& schmittTrig, Voice& voice, DSPUtils::DecayEnvelope& envelope,
+	std::tuple<float, float> processChannel(int trigger_in, int vol_in, int push_in, int filter_in, int decay_in, 
+										int link_in, dsp::SchmittTrigger& schmittTrig, TeknoDSP::Int16SampleVoice& voice, DSPUtils::DecayEnvelope& envelope,
 										float sampleRate, DSPUtils::CachedLowPass& lowFilter, DSPUtils::CachedHighPass& highFilter, 
-										float individual_out, float led_out, float pan_in, float mixLeft, float mixRight, 
+										int individual_out, int led_out, int pan_in, float mixLeft, float mixRight, 
 										const int16_t* sample_data, int sample_len) {		
 		// Get input values.
 		float trigger = inputs[trigger_in].getVoltage();
@@ -273,9 +227,9 @@ struct TL_Drum5 : Module {
 			LINK_OH_PARAM, trigOpenHat, openHat, openHatEnvelope, sampleRate, openHatLowFilter, openHatHighFilter, OUT_OH_OUTPUT, 
 			LED_OH_LIGHT, PAN_OH_PARAM, mixLeft, mixRight, openhat_sample, openhat_sample_len);
 
-        // Stereo Outs, rescaled to ±5V.
-		outputs[OUT_L_OUTPUT].setVoltage(mixLeft * 5.f);
-		outputs[OUT_R_OUTPUT].setVoltage(mixRight * 5.f);
+        // Stereo Outs, rescaled and soft-limited to +/-5 V audio levels.
+		outputs[OUT_L_OUTPUT].setVoltage(DSPUtils::softLimit5V(mixLeft * 5.f));
+		outputs[OUT_R_OUTPUT].setVoltage(DSPUtils::softLimit5V(mixRight * 5.f));
 
 	}
 };

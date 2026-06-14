@@ -1,10 +1,8 @@
 # TeknoLogical Module Collection
 
-**TeknoLogical** is a collection of **VCV Rack 2** modules for live minimal techno.
+<img width="309" height="124" alt="tecnologo" src="https://github.com/user-attachments/assets/8c090297-3238-41ae-8a1e-a2d54ca1af6a" />
+<img width="1501" height="1067" alt="Screenshot 2026-05-15 132516" src="https://github.com/user-attachments/assets/8a79b775-fabd-44dd-8e3d-17325d8784b5" />
 
-<img width="309" height="124" alt="tecnologo" src="https://github.com/user-attachments/assets/c6f54a3b-7187-4efb-88aa-6d7e0b78abd8" />
-
-<img width="1880" height="697" alt="Captura de pantalla 2025-09-24 122335" src="https://github.com/user-attachments/assets/778ff262-2037-4067-a99c-ea0050b1794c" />
 
 ## Overview
 
@@ -20,12 +18,23 @@ This project favors **musical constraint, immediacy, and coherence** - qualities
 
 ## Included Modules
 
-- [TL-Drum5](docs/TL-Drum5.md) - 5-Voice Polyphonic Drum Machine.
-- [TL-Seq4](docs/TL-Seq4.md) - 4-8-16 Dual channel step sequencer.
-- [TL-Reseter](docs/TL-Reseter.md) - Dual channel reset expander.
-- [TL-Bass](docs/TL-Bass.md) - Bass trigger.
-- [TL-Mixes](docs/TL-Mixes.md) - 7-channel stereo mixer with cutoff.
+- [TL-Drum5](docs/TL-Drum5.md) – 5-Voice Polyphonic Drum Machine.
+- [TL-Seq4](docs/TL-Seq4.md) – 4-8-16 Dual channel step sequencer.
+- [TL-Reseter](docs/TL-Reseter.md) – Dual channel reset expander.
+- [TL-Bass](docs/TL-Bass.md) - Trigger-driven bass voice.
+- [TL-Mixes](docs/TL-Mixes.md) – 7-channel stereo mixer with cutoff.
+- [TL-Odd5](docs/TL-Odd5.md) – Triple odd-step voltage sequencer.
+- [TL-Bool](docs/TL-Bool.md) – Dual-input logic gate processor with probability.
+- [TL-Pump](docs/TL-Pump.md) – Sidechain-style stereo ducker with selectable pump curves.
+- [TL-VuLR](docs/TL-VuLR.md) – Stereo VU Meter.
+- [TL-LowF](docs/TL-LowF.md) – Quad-phase control LFO with waves and multipliers.
+- [TL-Shape](docs/TL-Shape.md) - ADSR envelope generator with stereo VCA.
+- [TL-Deck](docs/TL-Deck.md) - Stereo WAV player with waveform display.
 - [TL-Static](docs/TL-Static.md) - Four-color noise source with XY mix and shared low-pass filter.
+
+## Testing Branch Module
+
+This branch also includes [TL-tester](docs/TL-tester.md), a development panel for checking Rack components and custom UI assets. It is intentionally present on `with-tester-module` and is not part of the main release branch.
 
 ## Installation
 

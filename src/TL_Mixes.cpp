@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include "../helpers/dsp_utils.hpp"
+#include "dsp/stereo_mixer_utils.hpp"
 
 using namespace rack;
 
@@ -46,14 +47,11 @@ struct TL_Mixes : Module {
 	DSPUtils::HP1 hpR[CH];
 
 	// Pan/balance caches when no CV is present (avoid per-sample trig).
-	float lastPanKnob[CH] {};
-	float panGL[CH] {}; // mono->L gain
-	float panGR[CH] {}; // mono->R gain
-	float balG[CH]   {}; // stereo balance attenuation
-	bool  panCacheValid[CH] {};
+	TeknoDSP::PanCache panCache[CH];
 
 	// Metering and sample-rate tracking.
-	float vuL = 0.f, vuR = 0.f;
+	TeknoDSP::VuMeter5 vuL;
+	TeknoDSP::VuMeter5 vuR;
 	float sampleRate = 44100.f;
 
 	// Fixed CUT frequency.
@@ -92,24 +90,17 @@ struct TL_Mixes : Module {
 	// Reset runtime state and caches.
 	void onReset(const ResetEvent& e) override {
 		Module::onReset(e);
-		vuL = vuR = 0.f;
+		vuL.reset();
+		vuR.reset();
 		for (int i = 0; i < CH; ++i) {
 			hpL[i].reset(); hpR[i].reset();
-			panCacheValid[i] = false; lastPanKnob[i] = 0.f; panGL[i] = 0.7071f; panGR[i] = 0.7071f; balG[i] = 1.f;
+			panCache[i].reset();
 		}
 	}
 
 	// Update cached pan/balance gains when knob changes and no CV is connected.
 	inline void updatePanCachesIfNeeded(int c, float panKnob, bool panCvConnected) {
-		if (panCvConnected) return; // with CV we compute per sample
-		if (!panCacheValid[c] || DSPUtils::changedEnough(panKnob, lastPanKnob[c])) {
-			lastPanKnob[c] = panKnob;
-			// mono -> stereo gains
-			DSPUtils::equalPowerGains(panKnob, panGL[c], panGR[c]);
-			// stereo balance attenuation
-			balG[c] = DSPUtils::equalPowerAttenuation(panKnob);
-			panCacheValid[c] = true;
-		}
+		panCache[c].update(panKnob, panCvConnected);
 	}
 
 	// Audio/MIDI process: per-channel mixing, CUT, pan/balance, master and VU.
@@ -184,8 +175,8 @@ struct TL_Mixes : Module {
 					if (panVal > 0.f) inL *= g;
 					else if (panVal < 0.f) inR *= g;
 				} else {
-					if (panVal > 0.f) inL *= balG[c];
-					else if (panVal < 0.f) inR *= balG[c];
+					if (panVal > 0.f) inL *= panCache[c].balanceAttenuation;
+					else if (panVal < 0.f) inR *= panCache[c].balanceAttenuation;
 				}
 				mixL += inL; mixR += inR;
 			}
@@ -196,7 +187,7 @@ struct TL_Mixes : Module {
 					float gl, gr; DSPUtils::equalPowerGains(panVal, gl, gr);
 					mixL += mono * gl; mixR += mono * gr;
 				} else {
-					mixL += mono * panGL[c]; mixR += mono * panGR[c];
+					mixL += mono * panCache[c].monoLeft; mixR += mono * panCache[c].monoRight;
 				}
 			}
 		}
@@ -210,23 +201,11 @@ struct TL_Mixes : Module {
 		float outR = DSPUtils::softLimit5V(mixR);
 
 		// Post-limiter VU (simple attack/decay ballistics).
-		const float rel = 0.02f;
 		float absL = std::fabs(outL), absR = std::fabs(outR);
-		vuL = std::max(absL, vuL * (1.f - rel) + absL * rel);
-		vuR = std::max(absR, vuR * (1.f - rel) + absR * rel);
-
-		// Light up 5-segment VU bars (L/R).
-		auto setVU = [&](float v, int baseLight) {
-			const float fs = 5.f;
-			const float t1 = 0.05f * fs, t2 = 0.12f * fs, t3 = 0.25f * fs, t4 = 0.50f * fs, t5 = 0.90f * fs;
-			lights[baseLight + 0].setBrightness(v >= t1);
-			lights[baseLight + 1].setBrightness(v >= t2);
-			lights[baseLight + 2].setBrightness(v >= t3);
-			lights[baseLight + 3].setBrightness(v >= t4);
-			lights[baseLight + 4].setBrightness(v >= t5);
-		};
-		setVU(vuL, L_VU_1_LIGHT);
-		setVU(vuR, R_VU_1_LIGHT);
+		vuL.process(absL);
+		vuR.process(absR);
+		vuL.write(lights, L_VU_1_LIGHT);
+		vuR.write(lights, R_VU_1_LIGHT);
 
 		// Outputs (post-limiter).
 		outputs[OUT_L_OUTPUT].setVoltage(outL);

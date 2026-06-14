@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "../helpers/dsp_utils.hpp"
+#include "dsp/stereo_mixer_utils.hpp"
 
 #include <algorithm>
 #include <array>
@@ -77,16 +78,12 @@ struct TL_Treex : Module {
 	DSPUtils::HP1 hpL[CH];
 	DSPUtils::HP1 hpR[CH];
 
-	float balG[CH] {};
-	float lastPanKnob[CH] {};
-	float panGL[CH] {};
-	float panGR[CH] {};
-	bool panCacheValid[CH] {};
+	TeknoDSP::PanCache panCache[CH];
 
 	float cutHz = 180.f;
 	float sampleRate = 44100.f;
-	float vuL = 0.f;
-	float vuR = 0.f;
+	TeknoDSP::VuMeter5 vuL;
+	TeknoDSP::VuMeter5 vuR;
 
 	TL_Treex() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -125,33 +122,18 @@ struct TL_Treex : Module {
 	}
 
 	void onReset() override {
-		vuL = 0.f;
-		vuR = 0.f;
+		vuL.reset();
+		vuR.reset();
 
 		for (int c = 0; c < CH; ++c) {
 			hpL[c].reset();
 			hpR[c].reset();
-
-			balG[c] = 1.f;
-			lastPanKnob[c] = 0.f;
-			panGL[c] = 0.7071f;
-			panGR[c] = 0.7071f;
-			panCacheValid[c] = false;
+			panCache[c].reset();
 		}
 	}
 
 	inline void updatePanCache(int c, float panKnob, bool panCvConnected) {
-		if (panCvConnected)
-			return;
-
-		if (!panCacheValid[c] || DSPUtils::changedEnough(panKnob, lastPanKnob[c])) {
-			lastPanKnob[c] = panKnob;
-
-			DSPUtils::equalPowerGains(panKnob, panGL[c], panGR[c]);
-			balG[c] = DSPUtils::equalPowerAttenuation(panKnob);
-
-			panCacheValid[c] = true;
-		}
+		panCache[c].update(panKnob, panCvConnected);
 	}
 
 	void process(const ProcessArgs& args) override {
@@ -233,9 +215,9 @@ struct TL_Treex : Module {
 				}
 				else {
 					if (pan > 0.f)
-						inL *= balG[c];
+						inL *= panCache[c].balanceAttenuation;
 					else if (pan < 0.f)
-						inR *= balG[c];
+						inR *= panCache[c].balanceAttenuation;
 				}
 
 				mixL += inL;
@@ -253,8 +235,8 @@ struct TL_Treex : Module {
 					mixR += mono * gr;
 				}
 				else {
-					mixL += mono * panGL[c];
-					mixR += mono * panGR[c];
+					mixL += mono * panCache[c].monoLeft;
+					mixR += mono * panCache[c].monoRight;
 				}
 			}
 		}
@@ -262,26 +244,13 @@ struct TL_Treex : Module {
 		float outL = DSPUtils::softLimit5V(mixL);
 		float outR = DSPUtils::softLimit5V(mixR);
 
-		const float rel = 0.02f;
-
 		float absL = std::fabs(outL);
 		float absR = std::fabs(outR);
 
-		vuL = std::max(absL, vuL * (1.f - rel) + absL * rel);
-		vuR = std::max(absR, vuR * (1.f - rel) + absR * rel);
-
-		auto setVU = [&](float value, int baseLight) {
-			const float fs = 5.f;
-
-			lights[baseLight + 0].setBrightness(value >= 0.05f * fs);
-			lights[baseLight + 1].setBrightness(value >= 0.12f * fs);
-			lights[baseLight + 2].setBrightness(value >= 0.25f * fs);
-			lights[baseLight + 3].setBrightness(value >= 0.50f * fs);
-			lights[baseLight + 4].setBrightness(value >= 0.90f * fs);
-		};
-
-		setVU(vuL, L_VU_1_LIGHT);
-		setVU(vuR, R_VU_1_LIGHT);
+		vuL.process(absL);
+		vuR.process(absR);
+		vuL.write(lights, L_VU_1_LIGHT);
+		vuR.write(lights, R_VU_1_LIGHT);
 
 		outputs[OUT_L_OUTPUT].setVoltage(outL);
 		outputs[OUT_R_OUTPUT].setVoltage(outR);

@@ -64,6 +64,7 @@ struct TL_tester : Module {
 		configParam(KNOB9_PARAM, 0.f, 1.f, 0.f, "");
 		configParam(KNOB10_PARAM, 0.f, 1.f, 0.f, "");
 		configParam(KNOB11_PARAM, 0.f, 1.f, 0.f, "");
+		configParam(KNOB12_PARAM, 0.f, 1.f, 0.f, "");
 		configParam(KNOB13_PARAM, 0.f, 1.f, 0.f, "");
 		configParam(KNOB14_PARAM, 0.f, 1.f, 0.f, "");
 		configParam(KNOB15_PARAM, 0.f, 1.f, 0.f, "");
