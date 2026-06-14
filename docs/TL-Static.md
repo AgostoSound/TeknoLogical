@@ -1,5 +1,7 @@
 # TL-Static
 
+<img width="215" height="905" alt="Screenshot 2026-06-14 121943" src="https://github.com/user-attachments/assets/567ab78f-3dab-4653-b242-f71536208b03" />
+
 **Four-color noise source for VCV Rack 2.** TL-Static generates **White**, **Pink**, **Brown**, and **Blue** noise simultaneously, each available on its own output, plus an **XY Mix** output driven by the custom selector in the center of the panel. A shared **Volume** control and a shared **low-pass filter** shape all four colors together.
 
 ---
