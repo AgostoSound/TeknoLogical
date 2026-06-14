@@ -1,5 +1,7 @@
 # TL-Deck
 
+<img width="203" height="857" alt="Screenshot 2026-05-15 234853" src="https://github.com/user-attachments/assets/b8f7f54f-a1fd-4484-8796-1a8e6265603e" />
+
 TL-Deck is a compact stereo WAV player for VCV Rack 2. It loads a local WAV file, displays a vertical waveform view, and plays the file from the beginning when triggered.
 
 The module is intended for stems, loops, one-shots, texture beds, and live performance material that should be launched reliably from a patch.
