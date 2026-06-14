@@ -10,24 +10,24 @@
 
 **TeknoLogical** is a focused set of VCV Rack 2 modules shaped for **live minimal techno**. The goal is simple: a compact, coherent instrument that feels immediate and reliable on stage.
 
-Each module is streamlined for **rhythmic and melodic pattern work**—sequencing, tone shaping, and controlled variation—so you can build grooves quickly and stay in the musical flow. The set is curated to work as a whole, enabling complete performances with minimal external dependencies.
+Each module is streamlined for **rhythmic and melodic pattern work** - sequencing, tone shaping, and controlled variation - so you can build grooves quickly and stay in the musical flow. The set is curated to work as a whole, enabling complete performances with minimal external dependencies.
 
-> **Heads‑up:** TeknoLogical is a **purpose-built instrument**, not a general‑purpose toolkit. Some modules use fixed samples or intentionally narrowed controls to maintain a **consistent sonic character** and a fast, performance‑first workflow.
+> **Heads-up:** TeknoLogical is a **purpose-built instrument**, not a general-purpose toolkit. Some modules use fixed samples or intentionally narrowed controls to maintain a **consistent sonic character** and a fast, performance-first workflow.
 
-This project favors **musical constraint, immediacy, and coherence**—qualities that help keep live techno tight, expressive, and dependable. If that focus resonates with you, welcome aboard.
+This project favors **musical constraint, immediacy, and coherence** - qualities that help keep live techno tight, expressive, and dependable. If that focus resonates with you, welcome aboard.
 
 ---
 
-## 📦 Included Modules
+## Included Modules
 
-- [TL-Drum5](docs/TL-Drum5.md) – 5-Voice Polyphonic Drum Machine.
-- [TL-Seq4](docs/TL-Seq4.md) – 4-8-16 Dual channel step sequencer.
-- [TL-Reseter](docs/TL-Reseter.md) – Dual channel reset expander.
-- [TL-Bass](docs/TL-Bass.md) – Bass trigger.
-- [TL-Mixes](docs/TL-Mixes.md) – 7-channel stereo mixer with cutoff.
+- [TL-Drum5](docs/TL-Drum5.md) - 5-Voice Polyphonic Drum Machine.
+- [TL-Seq4](docs/TL-Seq4.md) - 4-8-16 Dual channel step sequencer.
+- [TL-Reseter](docs/TL-Reseter.md) - Dual channel reset expander.
+- [TL-Bass](docs/TL-Bass.md) - Bass trigger.
+- [TL-Mixes](docs/TL-Mixes.md) - 7-channel stereo mixer with cutoff.
+- [TL-Static](docs/TL-Static.md) - Four-color noise source with XY mix and shared low-pass filter.
 
-
-## 📥 Installation
+## Installation
 
 1. Clone this repository into your VCV Rack plugins folder:
    ```bash
