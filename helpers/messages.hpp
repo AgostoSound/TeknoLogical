@@ -1,6 +1,3 @@
 #pragma once
 
-struct ReseterMessage {
-    bool aGate = false;
-    bool bGate = false;
-};
+#include "../src/expanders/reseter_message.hpp"

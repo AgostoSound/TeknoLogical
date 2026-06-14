@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "../helpers/widgets/sliders.hpp"
+#include "dsp/lfo.hpp"
 
 struct TL_LowF : Module {
 	enum ParamId {
@@ -80,29 +81,6 @@ struct TL_LowF : Module {
 		configOutput(OUT2_OUTPUT, "Channel 2");
 		configOutput(OUT3_OUTPUT, "Channel 3");
 		configOutput(OUT4_OUTPUT, "Channel 4");
-	}
-
-	static inline float triangleWave(float p) {
-		// p in [0, 1)
-		// output in [-1, 1]
-		return 1.f - 4.f * std::fabs(p - 0.5f);
-	}
-
-	static inline float squareWave(float p) {
-		return (p < 0.5f) ? 1.f : -1.f;
-	}
-
-	static inline float sineWave(float p) {
-		return std::sin(2.f * M_PI * p);
-	}
-
-	static inline float evalWave(int waveType, float p) {
-		switch (waveType) {
-			case 0:  return sineWave(p);
-			case 1:  return triangleWave(p);
-			case 2:  return squareWave(p);
-			default: return sineWave(p);
-		}
 	}
 
 	// Main cycle.
@@ -189,7 +167,7 @@ struct TL_LowF : Module {
 			float p = phase * mults[i] + phaseOffsets[i];
 			p -= (int) p;
 
-			float wave = evalWave(waves[i], p);     // [-1, 1]
+			float wave = TeknoDSP::evalLfoWave(waves[i], p);     // [-1, 1]
 			float out = wave * amplitude;           // bipolar, peak = amplitude
 
 			outputs[outputIds[i]].setVoltage(out);

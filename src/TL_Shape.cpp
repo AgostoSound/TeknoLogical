@@ -1,5 +1,6 @@
 #include "plugin.hpp"
 #include "../helpers/widgets/sliders.hpp"
+#include "dsp/adsr_envelope.hpp"
 
 
 struct TL_Shape : Module {
@@ -47,26 +48,10 @@ struct TL_Shape : Module {
 		LIGHTS_LEN
 	};
 
-	enum EnvStage {
-		IDLE_STAGE,
-		ATTACK_STAGE,
-		DECAY_STAGE,
-		SUSTAIN_STAGE,
-		RELEASE_STAGE
-	};
-
-	EnvStage envStage = IDLE_STAGE;
-
-	float attackTime = 0.001f;
-	float decayTime = 0.001f;
-	float env = 0.f;
-	float releaseStart = 0.f;
-	float releaseTime = 0.001f;
-	float sustainLevel = 0.f;
+	TeknoDSP::ADSREnvelope envelope;
 
 	dsp::ClockDivider controlDivider;
 	dsp::ClockDivider lightDivider;
-	dsp::SchmittTrigger gateTrigger;
 
 	TL_Shape() {
 		config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
@@ -91,76 +76,21 @@ struct TL_Shape : Module {
 		lightDivider.setDivision(512);
 	}
 
-	float knobToTime(float value, float minTime = 0.001f, float maxTime = 10.f) {
-		return minTime * std::pow(maxTime / minTime, value);
-	}
-
-	void startRelease() {
-		if (envStage != RELEASE_STAGE && envStage != IDLE_STAGE) {
-			releaseStart = env;
-			envStage = RELEASE_STAGE;
-		}
-	}
-
 	void processEnvelope(const ProcessArgs& args) {
 		if (controlDivider.process()) {
-			attackTime = knobToTime(params[ATTACK_PARAM].getValue());
-			decayTime = knobToTime(params[DECAY_PARAM].getValue());
-			releaseTime = knobToTime(params[RELEASE_PARAM].getValue());
-			sustainLevel = params[SUSTAIN_PARAM].getValue();
+			envelope.setControls(
+				params[ATTACK_PARAM].getValue(),
+				params[DECAY_PARAM].getValue(),
+				params[SUSTAIN_PARAM].getValue(),
+				params[RELEASE_PARAM].getValue()
+			);
 		}
 
 		const bool manualGate = params[TRIGGER_PARAM].getValue() > 0.5f;
 		const bool inputGate = inputs[TRIG_CV_INPUT].isConnected() && inputs[TRIG_CV_INPUT].getVoltage() >= 1.f;
 		const bool gate = manualGate || inputGate;
 
-		if (gateTrigger.process(gate ? 10.f : 0.f)) {
-			envStage = ATTACK_STAGE;
-		}
-
-		if (!gate && envStage != IDLE_STAGE) {
-			startRelease();
-		}
-
-		switch (envStage) {
-			case IDLE_STAGE: {
-				env = 0.f;
-			} break;
-
-			case ATTACK_STAGE: {
-				env += args.sampleTime / attackTime;
-
-				if (env >= 1.f) {
-					env = 1.f;
-					envStage = DECAY_STAGE;
-				}
-			} break;
-
-			case DECAY_STAGE: {
-				env -= args.sampleTime * (1.f - sustainLevel) / decayTime;
-
-				if (env <= sustainLevel) {
-					env = sustainLevel;
-					envStage = SUSTAIN_STAGE;
-				}
-			} break;
-
-			case SUSTAIN_STAGE: {
-				env = sustainLevel;
-			} break;
-
-			case RELEASE_STAGE: {
-				env -= args.sampleTime * releaseStart / releaseTime;
-
-				if (env <= 0.f) {
-					env = 0.f;
-					envStage = IDLE_STAGE;
-				}
-			} break;
-		}
-
-		env = clamp(env, 0.f, 1.f);
-
+		float env = envelope.process(gate, args.sampleTime);
 		outputs[CV_OUT_OUTPUT].setVoltage(env * 10.f);
 	}
 
@@ -204,7 +134,7 @@ struct TL_Shape : Module {
 
 		const float level = inputs[CV_IN_INPUT].isConnected()
 			? clamp(inputs[CV_IN_INPUT].getVoltage() / 10.f, 0.f, 1.f)
-			: env;
+			: envelope.env;
 
 		const bool manualGate = params[TRIGGER_PARAM].getValue() > 0.5f;
 		const bool inputGate = inputs[TRIG_CV_INPUT].isConnected() && inputs[TRIG_CV_INPUT].getVoltage() >= 1.f;

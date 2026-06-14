@@ -2,48 +2,54 @@
 
 <img width="552" height="582" alt="docu_drum5" src="https://github.com/user-attachments/assets/41dd1fff-a9fb-4948-80be-6d3f84c7f06b" />
 
-A 5-channel drum sample player for VCV Rack. Each channel has its own trigger, envelope, filter, panning, and volume control. Ideal for building drum grooves with tight control and a clean stereo mix.
+TL-Drum5 is a compact 5-voice drum sample player for VCV Rack. Each voice has its own trigger input, decay envelope, filter, pan, volume, push, link routing, individual output, and contribution to the stereo mix.
+
+The stereo mix is soft-limited to nominal +/-5 V so stacked drum hits stay in normal Rack audio range.
 
 ---
 
-## 🎛️ Controls (per channel)
+## Controls Per Voice
 
 | Control | Description |
-|--------|-------------|
-| **Push** | Boosts the signal level 50% |
-| **Link** | Routes the output **only** to its dedicated output, bypassing the stereo mix |
-| **Pan** | Stereo panning for the channel (-1 = Left, 1 = Right) |
-| **Vol** | Output volume |
-| **Decay** | Controls how long the sound rings out (negative = shorter, positive = longer) |
-| **Filter** | Sweeps between high-pass and low-pass filters for tonal shaping |
+| --- | --- |
+| **Push** | Boosts the voice before filtering and volume. |
+| **Link** | Removes the voice from the stereo mix and routes it only to its individual output. |
+| **Pan** | Places the voice in the stereo mix when Link is off. |
+| **Vol** | Voice level. |
+| **Decay** | Sets the one-shot decay time. Negative values are shorter, positive values are longer. |
+| **Filter** | Bipolar macro filter. Negative values use low-pass, positive values use high-pass, and 0 is bypass. |
 
 ---
 
-## 🎚️ Triggers
+## Inputs
 
-Each trigger fires the corresponding sample with a custom envelope and processing chain.
-
----
-
-## 🔈 Outputs
-
-- `OUT` – Each channel has its individual mono output.  
-- `STEREO OUT` – Stereo mix output (only includes channels with `Link` OFF)
+- **Kick, Snare, Clap, Closed Hat, Open Hat trigger inputs** - Each rising edge restarts the corresponding sample and decay envelope.
 
 ---
 
+## Outputs
 
-## 🛠️ Notes
-
-- If **Link** is active on a channel, its signal **won’t be mixed into the stereo output**.
-- The stereo mix includes panning and volume settings for each unlinked channel.
-
----
-
-## 🔁 Typical Use
-
-Use TL-Drum5 to create quick and customizable drum lines. Connect sequencer triggers, tweak filters for tonal variety, pan your channels for stereo width, and optionally route some voices out individually for external processing or mixing.
+- **Individual outputs** - One mono output per voice.
+- **Stereo L/R outputs** - Panned stereo sum of all voices whose Link control is off.
 
 ---
 
-[⬅ Back to Module Index](../README.md)
+## Notes
+
+- Individual outputs are taken after each voice volume/filter chain.
+- Linked voices stay available on their individual outputs but do not enter the stereo bus.
+- The stereo bus uses a soft limiter at the final output stage to avoid hard clipping when multiple voices hit together.
+
+---
+
+## Typical Use
+
+1. Patch sequencer triggers into the five trigger inputs.
+2. Use **Decay** and **Filter** to shape each drum voice.
+3. Use **Pan** and **Vol** to build a quick stereo drum mix.
+4. Enable **Link** on voices you want to process externally.
+5. Send the stereo output to TL-Mixes or your main Rack mixer.
+
+---
+
+[Back to module index](../README.md)
